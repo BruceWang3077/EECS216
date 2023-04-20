@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 
 class Lot:
@@ -8,6 +9,7 @@ class Lot:
         self.grid = []
         self.cartlist = []
         self.worker_pos=()
+        self.adj_matrix=np.zeros((num_carts+1,num_carts+1))
         for i in range(size):
             row = []
             for j in range(size):
@@ -71,10 +73,19 @@ class Lot:
                     print(self)
                 else:
                     print("Position already occupied, please choose another position.")
-
-
         else:
             print("setup_option wrong format!")
+        self.get_adj_matrix()
+
+    def get_adj_matrix(self):
+        nodes=[self.worker_pos]
+        nodes+=self.cartlist
+        for i in range(len(nodes)):
+            for j in range(i+1, len(nodes)):
+                dis=get_distance(nodes[i],nodes[j])
+                self.adj_matrix[i][j]=dis
+                self.adj_matrix[j][i]=dis
+
 
     def __str__(self):
         s = "  "
@@ -96,7 +107,11 @@ class Lot:
     def add_navigation(self, directions):
         direction_dict = {"up": "|", "down": "|", "right": "-", "left": "-"}
         i, j = self.worker_pos
+        new_directions=[]
         for direction in directions:
+            new_directions+=direction
+
+        for direction in new_directions:
             if direction == "down":
                 i += 1
             elif direction == "up":
@@ -113,28 +128,29 @@ class Lot:
         prev_direction = None
         prev_pos = (i, j)
         steps=1
-        for direction in directions:
-            if direction != prev_direction and prev_direction!=None:
-                # a turn occurs
-                if steps >0:
-                    print("At ({},{}), take {} step(s) {} to ({},{})".format(prev_pos[0], prev_pos[1], steps,prev_direction, i, j))
-                prev_direction = direction
-                prev_pos = (i, j)
-                steps = 1
-            elif direction != prev_direction:
-                prev_direction=direction
-            else:
-                #same direction
-                steps += 1
-            if direction == "down":
-                i += 1
-            elif direction == "up":
-                i -= 1
-            elif direction == "right":
-                j += 1
-            elif direction == "left":
-                j -= 1
-            # meet a cart in the middle of the direct line
+        for one_directions in directions:
+            for direction in one_directions:
+                if direction != prev_direction and prev_direction!=None:
+                    # a turn occurs
+                    if steps >0:
+                        print("At ({},{}), take {} step(s) {} to ({},{})".format(prev_pos[0], prev_pos[1], steps,prev_direction, i, j))
+                    prev_direction = direction
+                    prev_pos = (i, j)
+                    steps = 1
+                elif prev_direction is None:
+                    prev_direction=direction
+                else:
+                    #same direction
+                    steps += 1
+                if direction == "down":
+                    i += 1
+                elif direction == "up":
+                    i -= 1
+                elif direction == "right":
+                    j += 1
+                elif direction == "left":
+                    j -= 1
+                # meet a cart in the middle of the direct line
             if self.grid[i][j] == "C":
                 print(
                     "At ({},{}), take {} step(s) {} to ({},{})".format(prev_pos[0], prev_pos[1], steps,
@@ -148,41 +164,62 @@ class Lot:
 
 
 class RoutePlanner:
-    def __init__(self, lot):
+    def __init__(self, lot,algo_option):
         self.lot = lot
         self.visited_cart = []
+        self.algo_option=algo_option
 
     def get_directions(self,lot):
-        directions = []
-        curr_pos =lot.worker_pos
-        while True:
-            cart_pos = self.find_closest_cart(curr_pos)
-            self.visited_cart.append(cart_pos)
-            if cart_pos == None:
-                break
-            path = self.get_path(curr_pos, cart_pos)
-            directions += path
-            curr_pos = cart_pos
-        path = self.get_path(curr_pos, lot.worker_pos)
-        directions += path
+        curr_pos=lot.worker_pos
+        directions=[]
+        if self.algo_option=='1':
+            carts=lot.cartlist.copy()
+        else:
+            carts=self.optimal_order(lot)
+        while carts:
+            cart=carts.pop(0)
+            path=self.get_path(curr_pos,cart)
+            directions.append(path)
+            curr_pos=cart
+        path=self.get_path(curr_pos,lot.worker_pos)
+        directions.append(path)
         return directions
 
-    def find_closest_cart(self, pos):
-        carts = []
-        for i in range(self.lot.size):
-            for j in range(self.lot.size):
-                if self.lot.grid[i][j] == "C" and (i, j) not in self.visited_cart:
-                    carts.append((i, j))
-        if len(carts) == 0:
-            return None
-        closest_cart = carts[0]
-        closest_distance = self.get_distance(pos, closest_cart)
-        for cart in carts:
-            distance = self.get_distance(pos, cart)
-            if distance < closest_distance:
-                closest_cart = cart
-                closest_distance = distance
-        return closest_cart
+    def optimal_order(self,lot):
+        orders= []
+        visited=[False]*(lot.num_carts+1)
+        permutation=[]
+        node=0
+        distance=0
+        self.dfs(node,visited, permutation,distance,orders,lot)
+        optimal_order = min(orders, key=lambda x: x[1])
+        optimal_order=optimal_order[0]
+        optimal_order.pop(0)
+        cart_list=[]
+        for cart in optimal_order:
+            cart=lot.cartlist[cart-1]
+            cart_list.append(cart)
+        return cart_list
+
+    def dfs(self,node,visited,permutation,distance,orders,lot):
+        visited[node]=True
+        if node!=0:
+            prev_node=permutation.pop()
+            distance+=lot.adj_matrix[prev_node][node]
+            permutation.append(prev_node)
+        permutation.append(node)
+        if len(permutation)==lot.num_carts+1:
+            orders.append((permutation.copy(),distance))
+        else:
+            for neighbor in range(lot.num_carts+1):
+                if not visited[neighbor]:
+                    self.dfs(neighbor,visited,permutation,distance,orders,lot)
+        permutation.pop()
+        visited[node]=False
+
+
+
+
 
     def get_path(self, start, end):
         path = []
@@ -198,7 +235,7 @@ class RoutePlanner:
             path += ["left" for i in range(abs(y_diff))]
         return path
 
-    def get_distance(self, pos1, pos2):
+def get_distance(pos1, pos2):
         return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 
@@ -227,7 +264,10 @@ def main():
             else:
                 lot = Lot(setup_option=setup_option)
             print(lot)
-            planner = RoutePlanner(lot)
+            print("1)pick up carts in random order")
+            print("2)pick up carts in an optimal order")
+            algo_option=input("please choose(1/2):")
+            planner = RoutePlanner(lot,algo_option)
             directions = planner.get_directions(lot)
             lot.add_navigation(directions)
             print(lot)
@@ -241,7 +281,7 @@ def main():
                 if choice_2 == "1":
                     size = int(input("please choose a size(5~25):"))
                 elif choice_2 == "2":
-                    number = int(input("please choose a number(3~20):"))
+                    number = int(input("please choose a number(3~10):"))
                 elif choice_2 == "3":
                     break
         if choice == "3":
