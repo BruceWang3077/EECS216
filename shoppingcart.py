@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Lot:
-    def __init__(self, setup_option, size=8, num_carts=random.randint(3, 8)):
+    def __init__(self, setup_option, size=5, num_carts=random.randint(3, 5)):
         self.size = size
         self.num_carts = num_carts
         self.grid = []
