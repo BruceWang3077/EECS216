@@ -278,8 +278,10 @@ def get_distance(pos1, pos2):
 
 def main():
     lot = Lot()
+    DebugMode = False
     while True:
-        print("Welcome to CoGPT's TSP!")
+        print("Welcome to CoGPT's CartsFinder!")
+        DebugMode = True if input("Do you want to enter debug mode?(y/n): ") == 'y' else False
         print("1) go get carts!")
         print("2) settings")
         print("3) exit")
@@ -294,9 +296,9 @@ def main():
             lot.add_navigation(directions)
             print(lot)
             lot.print_directions(directions)
-            print("total distance: ", path_length)
+            print("[DEBUG]total distance: ", path_length) if DebugMode is True else None
 
-        if choice == "2":
+        elif choice == "2":
             while True:
                 print("1)map size")
                 print("2)number of carts")
@@ -315,7 +317,7 @@ def main():
                 else:
                     print("invalid input, please try again")
 
-        if choice == "3":
+        elif choice == "3":
             break
         else:
             print("invalid input, please try again")
