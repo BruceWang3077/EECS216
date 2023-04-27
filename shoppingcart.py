@@ -1,38 +1,38 @@
 import random
 import numpy as np
 
-
 class Lot:
-    def __init__(self, setup_option, size=5, num_carts=random.randint(3, 5)):
+    def __init__(self, setup_option='r', size=5, num_carts=random.randint(3, 5)):
         self.size = size
         self.num_carts = num_carts
+        self.setup_option = setup_option
         self.grid = []
         self.cartlist = []
         self.worker_pos = ()
         self.adj_matrix = np.zeros((num_carts + 1, num_carts + 1))
-        for i in range(size):
+        for i in range(self.size):
             row = []
-            for j in range(size):
+            for j in range(self.size):
                 row.append(" ")
             self.grid.append(row)
         # random setup
-        if setup_option == 'r':
-            x = random.randint(0, size - 1)
-            y = random.randint(0, size - 1)
+        if self.setup_option == 'r':
+            x = random.randint(0, self.size - 1)
+            y = random.randint(0, self.size - 1)
             self.grid[x][y] = 'W'
             self.worker_pos = (x, y)
 
             cart_count = 0
             while cart_count < num_carts:
-                x = random.randint(0, size - 1)
-                y = random.randint(0, size - 1)
+                x = random.randint(0, self.size - 1)
+                y = random.randint(0, self.size - 1)
                 if self.grid[x][y] == " ":
                     self.grid[x][y] = "C"
                     cart_count += 1
                     self.cartlist.append((x, y))
         # manually setup
-        elif setup_option == 'm':
-            print("Manually set up the chessboard.")
+        elif self.setup_option == 'm':
+            print("Manually set up the map.")
 
             while True:
                 try:
@@ -40,7 +40,7 @@ class Lot:
                         "Enter the coordinates of the worker (row, column) separated by a space: ").split()
                     worker_row = int(worker_input[0])
                     worker_col = int(worker_input[1])
-                    if not (0 <= worker_row < size and 0 <= worker_col < size):
+                    if not (0 <= worker_row < self.size and 0 <= worker_col < self.size):
                         raise ValueError("Worker coordinates out of range.")
                     break  # break out of the while loop if input is valid
                 except (ValueError, IndexError) as e:
@@ -59,7 +59,7 @@ class Lot:
                         f"Enter the coordinates of cart {cart_count + 1} (row, column) separated by a space: ").split()
                     cart_row = int(cart_input[0])
                     cart_col = int(cart_input[1])
-                    if not (0 <= cart_row < size and 0 <= cart_col < size):
+                    if not (0 <= cart_row < self.size and 0 <= cart_col < self.size):
                         raise ValueError("Cart coordinates out of range.")
                 except (ValueError, IndexError) as e:
                     print(f"Invalid input format. {e} Please enter two integers separated by a space.")
@@ -76,6 +76,9 @@ class Lot:
         else:
             print("setup_option wrong format!")
         self.get_adj_matrix()
+
+    def reset(self):
+        self.__init__(self.setup_option, self.size, self.num_carts)
 
     def get_adj_matrix(self):
         nodes = [self.worker_pos]
@@ -274,9 +277,7 @@ def get_distance(pos1, pos2):
 
 
 def main():
-    global lot
-    size = 0
-    number = 0
+    lot = Lot()
     while True:
         print("Welcome to CoGPT's TSP!")
         print("1) go get carts!")
@@ -284,19 +285,6 @@ def main():
         print("3) exit")
         choice = input("please choose(1/2/3): ")
         if choice == "1":
-            setup_option = input("Would you like manual setup or random setup?(m/r)")
-            # assigned size and cart number
-            if size != 0 and number != 0:
-                lot = Lot(setup_option, size, number)
-            # only assigned size
-            elif size != 0:
-                lot = Lot(size=size, setup_option=setup_option)
-            # only assigned cart number
-            elif number != 0:
-                lot = Lot(num_carts=number, setup_option=setup_option)
-            # no preferred setting
-            else:
-                lot = Lot(setup_option=setup_option)
             print(lot)
             print("1)pick up carts in random order")
             print("2)pick up carts in an optimal order")
@@ -306,22 +294,31 @@ def main():
             lot.add_navigation(directions)
             print(lot)
             lot.print_directions(directions)
+            print("total distance: ", path_length)
 
         if choice == "2":
             while True:
                 print("1)map size")
                 print("2)number of carts")
-                print("3)back to the main menu")
+                print("3)random or manual setup")
+                print("4)back to the main menu")
                 choice_2 = input("please choose(1/2/3): ")
                 if choice_2 == "1":
-                    size = int(input("please input map size:"))
+                    lot.size = int(input("please input map size:"))
                 elif choice_2 == "2":
-                    number = int(input("please input carts number:"))
+                    lot.num_carts = int(input("please input carts number:"))
                 elif choice_2 == "3":
+                    lot.setup_option = input("Would you like manual setup or random setup?(m/r)")
+                elif choice_2 == "4":
+                    lot.reset()
                     break
+                else:
+                    print("invalid input, please try again")
+
         if choice == "3":
-            print("invalid input, please try again")
             break
+        else:
+            print("invalid input, please try again")
 
 
 main()
