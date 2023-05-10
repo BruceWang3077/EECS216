@@ -217,10 +217,6 @@ class RoutePlanner:
         permutation.pop()
         visited[node]=False
 
-
-
-
-
     def get_path(self, start, end):
         path = []
         x_diff = end[0] - start[0]
