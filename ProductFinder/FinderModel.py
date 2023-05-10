@@ -43,11 +43,35 @@ class FinderModel:
         # If the destination was not found, return an empty path
         return []
 
-    def getPath(self, origin: (int, int), destinations: [(int, int)],
+    def getPath(self, origin: (int, int), destination: (int, int),
                 obstacles: [[int]]) -> (int, int):
+
+        rows, cols = len(obstacles), len(obstacles[0])
         closest = None
         dist = float('inf')
-        for destination in destinations:
+
+        potential_destinations = []
+        if destination[0] > 0:
+            destination_up = (destination[0] - 1, destination[1])
+            if obstacles[destination_up[0]][destination_up[1]] != 1:
+                potential_destinations.append(destination_up)
+
+        if destination[0] < rows - 1:
+            destination_down = (destination[0] + 1, destination[1])
+            if obstacles[destination_down[0]][destination_down[1]] != 1:
+                potential_destinations.append(destination_down)
+
+        if destination[1] > 0:
+            destination_left = (destination[0], destination[1] - 1)
+            if obstacles[destination_left[0]][destination_left[1]] != 1:
+                potential_destinations.append(destination_left)
+
+        if destination[1] < cols - 1:
+            destination_right = (destination[0], destination[1] + 1)
+            if obstacles[destination_right[0]][destination_right[1]] != 1:
+                potential_destinations.append(destination_right)
+
+        for destination in potential_destinations:
             path = self.findPath(origin, destination, obstacles)
             if path:
                 distance = len(path)
@@ -61,7 +85,7 @@ def main():
     # Define the origin and destinations
     settings = []
     origin = (0, 0)
-    destinations = [(2, 3), (3, 2), (3, 4), (4, 3)]
+    destination = (3, 3)
     finderModel = FinderModel()
 
     # Define the obstacles
@@ -74,7 +98,7 @@ def main():
     ]
 
     # Find the closest path to any destination
-    path = finderModel.getPath(origin, destinations, obstacles)
+    path = finderModel.getPath(origin, destination, obstacles)
 
     # Print the result
     if path:
