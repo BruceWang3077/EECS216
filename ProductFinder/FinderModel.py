@@ -7,7 +7,7 @@ class FinderModel:
             obstacles[shelf[0]][shelf[1]] = 1
         return obstacles
 
-    def findPath(self, origin: (int, int), destination: (int, int), obstacles: [[int]]):
+    def findPath(self, origin: (int, int), shelf: (int, int), obstacles: [[int]]):
         # Define the dimensions of the grid (assuming obstacles is a square 2D array)
         rows, cols = len(obstacles), len(obstacles[0])
 
@@ -34,9 +34,10 @@ class FinderModel:
         # Run BFS until the destination is found
         while queue:
             row, col, path = queue.pop(0)
+            visited[row][col] = True
 
             # Check if the current cell is the destination
-            if (row, col) == destination:
+            if (row, col) == shelf:
                 return path + [(row, col)]
 
             # Define the possible moves from the current cell
@@ -50,7 +51,7 @@ class FinderModel:
         return []
 
     def getPath(self, origin: (int, int), destination: (int, int),
-                obstacles: [[int]]) -> (int, int):
+                obstacles: [[int]]) -> list:
 
         rows, cols = len(obstacles), len(obstacles[0])
         closest = None
@@ -116,3 +117,4 @@ def main():
 # Call the main function
 if __name__ == '__main__':
     main()
+
