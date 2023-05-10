@@ -1,0 +1,88 @@
+from tqdm import tqdm
+
+class FinderModel:
+
+    def findPath(self, origin: (int, int), destination: (int, int), obstacles: [[int]]):
+        # Define the dimensions of the grid (assuming obstacles is a square 2D array)
+        rows, cols = len(obstacles), len(obstacles[0])
+
+        # Create a 2D array to keep track of visited cells
+        visited = [[False for _ in range(cols)] for _ in range(rows)]
+
+        # Define a Queue to perform BFS
+        queue = [(origin[0], origin[1], [])]
+
+        # Define a function to check if a cell is a valid move
+        def isValidMove(row, col):
+            # Check if the cell is within the bounds of the grid
+            if row < 0 or row >= rows or col < 0 or col >= cols:
+                return False
+            # Check if the cell is an obstacle
+            if obstacles[row][col]:
+                return False
+            # Check if the cell has already been visited
+            if visited[row][col]:
+                return False
+            return True
+
+        # Run BFS until the destination is found
+        while queue:
+            row, col, path = queue.pop(0)
+            visited[row][col] = True
+
+            # Check if the current cell is the destination
+            if (row, col) == destination:
+                return path + [(row, col)]
+
+            # Define the possible moves from the current cell
+            moves = [(row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)]
+            for move in moves:
+                if isValidMove(*move):
+                    queue.append((move[0], move[1], path + [(row, col)]))
+
+        # If the destination was not found, return an empty path
+        return []
+
+    def getPath(self, origin: (int, int), destinations: [(int, int)],
+                obstacles: [[int]]) -> (int, int):
+        closest = None
+        dist = float('inf')
+        for destination in destinations:
+            path = self.findPath(origin, destination, obstacles)
+            if path:
+                distance = len(path)
+                if distance < dist:
+                    closest = path
+                    dist = distance
+        return closest
+
+
+def main():
+    # Define the origin and destinations
+    settings = []
+    origin = (0, 0)
+    destinations = [(2, 3), (3, 2), (3, 4), (4, 3)]
+    finderModel = FinderModel()
+
+    # Define the obstacles
+    obstacles = [
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 1, 0, 0, 0],
+        [0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0]
+    ]
+
+    # Find the closest path to any destination
+    path = finderModel.getPath(origin, destinations, obstacles)
+
+    # Print the result
+    if path:
+        print("Path found:", path)
+    else:
+        print("No path found")
+
+
+# Call the main function
+if __name__ == '__main__':
+    main()
