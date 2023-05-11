@@ -15,9 +15,6 @@ class FinderController:
         self.model = model
         self.view = view
         self.settings = settings if settings else DefaultSettings
-        self.obstacles = [[0 for i in range(self.settings['mapSize'][0])] for j in range(self.settings['mapSize'][1])]
-        for i in self.settings['shelves']:
-            self.obstacles[i[0]][i[1]] = 1
 
     def start(self):
         while True:
@@ -38,9 +35,11 @@ class FinderController:
         while True:
             destination = self.view.inputDestination()
 
-            optimal_path = self.model.getPath(self.settings['worker'], destination, self.obstacles)
+            optimal_path = self.model.getPath(self.settings['worker'], destination,
+                                              self.model.CreateObstacles(mapSize=self.settings['mapSize'],
+                                                                         shelves=self.settings['shelves']))
             self.view.printMap(mapSize=self.settings['mapSize'], worker=self.settings["worker"],
-                               shelves=self.settings["shelves"], path=optimal_path)
+                               shelves=self.settings["shelves"], path=optimal_path, highlight=[destination])
 
             self.view.printDirection(optimal_path)
 

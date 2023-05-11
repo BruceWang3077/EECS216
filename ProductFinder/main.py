@@ -4,7 +4,7 @@ from FinderView import FinderView
 
 def main():
     settings  = {
-        "mapSize": (5, 5),
+        "mapSize": (40, 21),
         "rotation": 0,
         "algorithm": "BFS",
         "worker": (0, 0),
