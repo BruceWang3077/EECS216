@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+import sys
+print(sys.executable)
+
 from FinderController import FinderController
 from FinderModel import FinderModel
 from FinderView import FinderView
