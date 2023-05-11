@@ -98,12 +98,61 @@ class FinderModel:
         # Return the closest destination.
         return closest
 
+    def tsp(self, products: list, obstacles: [[int]]):
+        n = len(products)
+        dist = [[0] * n for i in range(n)]
+        pathCache = [[] for i in range(n)]
+        for i in range(n):
+            for j in range(n):
+                pathCache[i].append([])
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                pathCache[i][j] = self.findPath(products[i], products[j], obstacles)
+                pathCache[j][i] = pathCache[i][j][::-1]
+                d = len(pathCache[j][i])
+                dist[i][j] = d
+                dist[j][i] = d
+
+        memo = {}
+
+        def dp(pos, visited):
+            if (pos, visited) in memo:
+                return memo[(pos, visited)]
+
+            if visited == (1 << n) - 1:
+                return dist[pos][0], [pos, 0]
+
+            ans, best_path = float('inf'), []
+            for i in range(n):
+                if visited & (1 << i) == 0:
+                    new_visited = visited | (1 << i)
+                    sub_ans, sub_path = dp(i, new_visited)
+                    total_dist = dist[pos][i] + sub_ans
+                    if total_dist < ans:
+                        ans = total_dist
+                        best_path = [pos] + sub_path[:]
+
+            memo[(pos, visited)] = ans, best_path
+            return ans, best_path
+
+        ans, best_path = dp(0, 1)
+        path = []
+        for i in range(len(best_path) - 1):
+            if i is not 0:
+                path += pathCache[best_path[i]][best_path[i + 1]][1:]
+            else:
+                path += pathCache[best_path[i]][best_path[i + 1]]
+
+        return ans, path
+
 
 def main():
     # Define the origin and destinations
     settings = []
     origin = (0, 0)
     destination = (3, 3)
+    testPath = [(0, 0), (0, 3), (4, 3), (3, 1)]
     finderModel = FinderModel()
 
     # Define the obstacles
@@ -116,7 +165,7 @@ def main():
     ]
 
     # Find the closest path to any destination
-    path = finderModel.getPath(origin, destination, obstacles)
+    distance, path = finderModel.tsp(testPath, obstacles)
 
     # Print the result
     if path:
