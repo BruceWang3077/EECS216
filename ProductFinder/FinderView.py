@@ -1,3 +1,4 @@
+from tqdm import tqdm
 
 class FinderView:
     def __init__(self):
@@ -30,7 +31,7 @@ class FinderView:
                 if (i, j) == worker:
                     row += " W "
                 elif (i, j) in shelves:
-                    row += " C "
+                    row += " S "
                 elif path!=None and (i,j)in path:
                     row += " * "
                 else:
@@ -78,7 +79,7 @@ class FinderView:
 
     def printMainMenu(self):
         print("Welcome!")
-        print("1) go get carts!")
+        print("1) go get product!")
         print("2) settings")
         print("3) exit")
         choice = input("please choose(1/2/3): ")
@@ -90,12 +91,14 @@ class FinderView:
         print("3) set MapSize")
         print("4) set worker")
         print("5) set shelves")
-        choice = input("please choose(1~5): ")
+        print("6) print current setting")
+        print("7) back to main menu")
+        choice = input("please choose(1~7): ")
         return choice
 
-    def printCurrentSetting(self,setting):
+    def printCurrentSetting(self, setting):
         print("rotation: ", setting['rotation'])
-        print("algorithm option:",setting["algorithmOption"])
+        print("algorithm option:",setting["algorithm"])
         print("map size:", setting["mapSize"])
         print("worker: ",setting["worker"])
         print("shelves: ",setting["shelves"])
@@ -128,8 +131,14 @@ class FinderView:
 
 
     def inputShelves(self):
-
-        return
-
-
-
+        file = open(input("please input file path:"), "r")
+        count_dict = {}
+        next(file)
+        for line in tqdm(file):
+            ID, X, Y = line.split('\t')
+            # drop the decimal part
+            X = int(float(X))
+            Y = int(float(Y))
+            count_dict[(X, Y)] = count_dict.get((X, Y), 0) + 1
+        shelves = list(count_dict.keys())
+        return  shelves, count_dict
