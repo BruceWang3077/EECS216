@@ -255,7 +255,11 @@ class RoutePlanner:
                 if not visited[neighbor]:
                     self.dfs(neighbor, visited, permutation, distance, orders, lot)
         permutation.pop()
+<<<<<<< HEAD
+        visited[node]=False
+=======
         visited[node] = False
+>>>>>>> f9e52cf6ebbfbb274039cddccdf09840af802af5
 
     def get_path(self, start, end):
         path = []
