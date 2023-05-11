@@ -1,5 +1,6 @@
 from tqdm import tqdm
 
+
 class FinderModel:
     def CreateObstacles(self, mapSize, shelves):
         obstacles = [[0 for _ in range(mapSize[1])] for _ in range(mapSize[0])]
@@ -30,7 +31,6 @@ class FinderModel:
                 return False
             return True
 
-
         # Run BFS until the destination is found
         while queue:
             row, col, path = queue.pop(0)
@@ -52,11 +52,19 @@ class FinderModel:
 
     def getPath(self, origin: (int, int), destination: (int, int),
                 obstacles: [[int]]) -> list:
-
+        '''This function takes three arguments:
+            origin: The starting point of the path.
+            destination: The ending point of the path.
+            obstacles: A 2D array of integers, where 1 represents an obstacle and 0 represents an empty space.
+        The function returns a list of coordinates that represents the shortest path from the origin to the destination.'''
+        # Get the dimensions of the map.
         rows, cols = len(obstacles), len(obstacles[0])
+
+        # Initialize the closest destination and the distance to infinity.
         closest = None
         dist = float('inf')
 
+        # Get all of the potential destinations.
         potential_destinations = []
         if destination[0] > 0:
             destination_up = (destination[0] - 1, destination[1])
@@ -78,6 +86,7 @@ class FinderModel:
             if obstacles[destination_right[0]][destination_right[1]] != 1:
                 potential_destinations.append(destination_right)
 
+        # For each potential destination, find the path to it and store the path if it is shorter than the current shortest path.
         for destination in potential_destinations:
             path = self.findPath(origin, destination, obstacles)
             if path:
@@ -85,6 +94,8 @@ class FinderModel:
                 if distance < dist:
                     closest = path
                     dist = distance
+
+        # Return the closest destination.
         return closest
 
 
@@ -117,4 +128,3 @@ def main():
 # Call the main function
 if __name__ == '__main__':
     main()
-

@@ -84,6 +84,7 @@ class FinderView:
             f"From ({first_pos[0]},{first_pos[1]}), go {steps} steps {prev_direction} to point ({curr_pos[0]},{curr_pos[1]})")
 
     def printMainMenu(self):
+        """Prints the main menu to the user terminal."""
         print("Welcome to ProductFinder(Alpha Release Version) by CoGPT")
         print("1) go get product!")
         print("2) settings")
@@ -92,8 +93,9 @@ class FinderView:
         return choice
 
     def printSettingMenu(self):
-        print("1) set rotation")
-        print("2) set algorithm option")
+        """Prints the settings menu to the user terminal."""
+        print("1) set rotation (under development)")
+        print("2) set algorithm option (under development)")
         print("3) set MapSize")
         print("4) set worker")
         print("5) set shelves")
