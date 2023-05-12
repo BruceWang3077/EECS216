@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 import sys
+
 print(sys.executable)
 
 from FinderController import FinderController
 from FinderModel import FinderModel
 from FinderView import FinderView
 
+
 def main():
-    settings  = {
+    settings = {
         "mapSize": (40, 21),
         "rotation": 1,
         "algorithm": "BFS",
@@ -18,6 +20,7 @@ def main():
     finderView = FinderView()
     finderController = FinderController(finderModel, finderView, settings)
     finderController.start()
+
 
 if __name__ == "__main__":
     main()
