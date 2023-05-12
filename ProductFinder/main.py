@@ -9,7 +9,7 @@ from FinderView import FinderView
 def main():
     settings  = {
         "mapSize": (40, 21),
-        "rotation": 0,
+        "rotation": 1,
         "algorithm": "BFS",
         "worker": (0, 0),
         "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)]

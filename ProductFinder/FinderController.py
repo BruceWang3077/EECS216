@@ -3,7 +3,7 @@ from FinderView import FinderView
 
 DefaultSettings = {
     "mapSize": (5, 5),
-    "rotation": 0,
+    "rotation": 1,
     "algorithm": "BFS",
     "worker": (0, 0),
     "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)]
@@ -30,7 +30,8 @@ class FinderController:
 
     def getProduct(self):
         self.view.printMap(mapSize=self.settings['mapSize'], worker=self.settings["worker"],
-                           shelves=self.settings["shelves"], path=None)
+                           shelves=self.settings["shelves"], path=None,
+                           rotation=self.settings["rotation"])
 
         while True:
             destination = self.view.inputDestination()
@@ -39,9 +40,10 @@ class FinderController:
                                               self.model.CreateObstacles(mapSize=self.settings['mapSize'],
                                                                          shelves=self.settings['shelves']))
             self.view.printMap(mapSize=self.settings['mapSize'], worker=self.settings["worker"],
-                               shelves=self.settings["shelves"], path=optimal_path, highlight=[destination])
+                               shelves=self.settings["shelves"], path=optimal_path, highlight=[destination],
+                               rotation=self.settings["rotation"])
 
-            self.view.printDirection(optimal_path)
+            self.view.printDirection(path=optimal_path,rotation=self.settings["rotation"],mapSize=self.settings["mapSize"])
 
             if input("Choose one option: \n1) go get another product! \n2) back to main menu\n") == "1":
                 continue
