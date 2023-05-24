@@ -210,6 +210,7 @@ class FinderView:
         rotation = input("please input rotation: ")
         return int(rotation)
 
+    '''
     def inputShelves(self):
         file = open(input("please input file path:"), "r")
         count_dict = {}
@@ -222,3 +223,16 @@ class FinderView:
             count_dict[(X, Y)] = count_dict.get((X, Y), 0) + 1
         shelves = list(count_dict.keys())
         return shelves, count_dict
+    '''
+
+    def ReadProductFromFile(self):
+        file = open(input("please input file path:"), "r")
+        product_dict = {}
+        next(file)
+        for line in tqdm(file):
+            ID, X, Y = line.split('\t')
+            # drop the decimal part
+            X = int(float(X))
+            Y = int(float(Y))
+            product_dict[ID] = (X, Y)
+        return product_dict

@@ -8,7 +8,8 @@ DefaultSettings = {
     "rotation": 1,
     "algorithm": "BFS",
     "worker": (0, 0),
-    "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)]
+    "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)],
+    "products":{}
 }
 
 
@@ -84,7 +85,9 @@ class FinderController:
                 self.settings['worker'] = self.view.inputWorker()
             elif choice == "5":
                 # The user wants to change the shelves.
-                self.settings['shelves'], _ = self.view.inputShelves()
+                ProductLoc = self.view.ReadProductFromFile()
+                self.settings['shelves'] = list(set(ProductLoc.values()))
+                self.settings['products'] = ProductLoc
             elif choice == "6":
                 # Print the current settings.
                 self.view.printCurrentSetting(self.settings)
