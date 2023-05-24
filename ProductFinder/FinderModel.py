@@ -139,7 +139,7 @@ class FinderModel:
         ans, best_path = dp(0, 1)
         path = []
         for i in range(len(best_path) - 1):
-            if i is not 0:
+            if i != 0:
                 path += pathCache[best_path[i]][best_path[i + 1]][1:]
             else:
                 path += pathCache[best_path[i]][best_path[i + 1]]
