@@ -5,7 +5,7 @@ from FinderView import FinderView
 # Define the default settings.
 DefaultSettings = {
     "mapSize": (5, 5),
-    "rotation": 0,
+    "rotation": 1,
     "algorithm": "BFS",
     "worker": (0, 0),
     "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)]
@@ -42,7 +42,7 @@ class FinderController:
         # This method is called when the user wants to get a product.
         # It prints the map, asks the user for a destination, and finds the optimal path to the destination.
         self.view.printMap(mapSize=self.settings['mapSize'], worker=self.settings["worker"],
-                           shelves=self.settings["shelves"], path=None)
+                           shelves=self.settings["shelves"], path=None, rotation=self.settings['rotation'])
 
         while True:
             destination = self.view.inputDestination()
@@ -54,10 +54,10 @@ class FinderController:
 
             # Print the map with the optimal path highlighted.
             self.view.printMap(mapSize=self.settings['mapSize'], worker=self.settings["worker"],
-                               shelves=self.settings["shelves"], path=optimal_path, highlight=[destination])
+                               shelves=self.settings["shelves"], path=optimal_path, highlight=[destination], rotation=self.settings['rotation'])
 
             # Print the directions for the optimal path.
-            self.view.printDirection(optimal_path)
+            self.view.printDirection(path=optimal_path, rotation=self.settings['rotation'], mapSize=self.settings['mapSize'])
 
             # Ask the user if they want to get another product.
             if input("Choose one option: \n1) go get another product! \n2) back to main menu\n") == "1":

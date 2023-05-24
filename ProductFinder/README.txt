@@ -7,7 +7,7 @@ Table of Contents:
 
 ##Overview
 This Alpha version has all the basic features available, such as：
-	1)Display the overall map with shelf location;
+	1)display the overall map with shelf location;
 	2)reading product location data from a file;
 	3)basic setting options;
 	4)asking the user to input the location of the product he/she wants to pick up;

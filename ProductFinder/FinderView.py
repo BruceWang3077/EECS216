@@ -6,8 +6,8 @@ class FinderView:
         return
 
     def printMap(self, mapSize: (int, int), shelves: [(int, int)], worker: (int, int), path: [(int, int)],
-                 highlight: [(int, int)] = [],
-                 rotation=0) -> None:
+                 rotation: int,
+                 highlight: [(int, int)] = []) -> None:
         """
         Prints a map in ascii to the user terminal.
 
@@ -15,18 +15,32 @@ class FinderView:
             mapSize (Tuple[int, int]): A tuple of integers representing the height and width of the map.
             shelves (List[Tuple[int, int]]): A list of tuples representing the position of all shelves.
             worker (Tuple[int, int]): A tuple representing the position of the worker.
-            rotation (int): An integer representing the rotation of the map.
+            rotation (int): An integer representing the counterclockwise degree of rotation of the map. 0,1 means rotation 0, 90
 
         Returns:
             None
         """
 
+        if rotation % 2 == 1:
+            mapSize = (mapSize[1], mapSize[0])
+
+        if shelves is not None:
+            shelves = self.rotateList(mapSize, shelves, rotation)
+        if path is not None:
+            path = self.rotateList(mapSize, path, rotation)
+        if highlight is not None:
+            highlight = self.rotateList(mapSize, highlight, rotation)
+        if worker is not None:
+            worker = self.rotateTuple(mapSize, worker, rotation)
+
         s = "  "
         for i in range(mapSize[1]):
             s += " %2d " % (i)
         s += "\n"
-        s += "  " + "┌───" * mapSize[1] + "┐"
-        print(s)
+        if rotation == 0:
+            print(s)
+        top = "  " + "┌───" * mapSize[1] + "┐"
+        print(top)
         for i in range(mapSize[0]):
             row = ""
             for j in range(mapSize[1]):
@@ -47,11 +61,68 @@ class FinderView:
                     row += "│"
                 else:
                     row += " "
-            print("%2d│" % i + row)
+            if rotation == 0:
+                print("%2d│" % i + row)
+            elif rotation == 1:
+                print("%2d│" % (mapSize[0] - 1 - i) + row)
         print("  └" + "───┘" * mapSize[1])
+        if rotation == 1:
+            print(s)
 
-    def printDirection(self, path: [(int, int)]) -> None:
+    def rotateList(self, mapSize: (int, int), list: [(int, int)], rotation: int):
+        new_list = []
+        if rotation == 0:
+            new_list = list
+        elif rotation == 1:
+            for tuple in list:
+                x = mapSize[0] - 1 - tuple[1]
+                y = tuple[0]
+                new_list.append((x, y))
+        elif rotation == 2:
+            for tuple in list:
+                x = mapSize[0] - 1 - tuple[0]
+                y = mapSize[1] - 1 - tuple[1]
+                new_list.append((x, y))
+        elif rotation == 3:
+            for tuple in list:
+                x = tuple[1]
+                y = mapSize[1] - 1 - tuple[0]
+                new_list.append((x, y))
+        return new_list
+
+    def rotateTuple(self, mapSize: (int, int), tuple: (int, int), rotation: int):
+        x, y = tuple
+        if rotation == 1:
+            x = mapSize[0] - 1 - tuple[1]
+            y = tuple[0]
+        elif rotation == 2:
+            x = mapSize[0] - 1 - tuple[0]
+            y = mapSize[1] - 1 - tuple[1]
+        elif rotation == 3:
+            x = tuple[1]
+            y = mapSize[1] - 1 - tuple[0]
+        tuple = (x, y)
+        return tuple
+
+    def reverseTuple(self, mapSize: (int, int), tuple: (int, int), rotation: int):
+        x, y = tuple
+        if rotation == 1:
+            x = tuple[1]
+            y = mapSize[0] - 1 - tuple[0]
+        elif rotation == 2:
+            x = mapSize[0] - 1 - tuple[0]
+            y = mapSize[1] - 1 - tuple[1]
+        elif rotation == 3:
+            x = mapSize[1] - 1 - tuple[1]
+            y = tuple[0]
+        tuple = (x, y)
+        return tuple
+
+    def printDirection(self, path: [(int, int)], rotation: int, mapSize: (int, int)) -> None:
         """Prints the directions to the user terminal."""
+        if rotation % 2 == 1:
+            mapSize = (mapSize[1], mapSize[0])
+        path = self.rotateList(mapSize, path, rotation)
         curr_direction = ""
         prev_direction = ""
         steps = 1
@@ -74,17 +145,20 @@ class FinderView:
                 steps += 1
                 prev_pos = curr_pos
             else:
+                reverse_first_pos = self.reverseTuple(mapSize=mapSize, rotation=rotation, tuple=first_pos)
+                reverse_prev_pos = self.reverseTuple(mapSize=mapSize, rotation=rotation, tuple=prev_pos)
                 print(
-                    f"From ({first_pos[0]},{first_pos[1]}), go {steps} steps {prev_direction} to point ({prev_pos[0]},{prev_pos[1]})")
+                    f"From ({reverse_first_pos[0]},{reverse_first_pos[1]}), go {steps} steps {prev_direction} to point ({reverse_prev_pos[0]},{reverse_prev_pos[1]})")
                 first_pos = prev_pos
                 steps = 1
                 prev_pos = curr_pos
                 prev_direction = curr_direction
+        reverse_first_pos = self.reverseTuple(mapSize=mapSize, rotation=rotation, tuple=first_pos)
+        reverse_curr_pos = self.reverseTuple(mapSize=mapSize, rotation=rotation, tuple=curr_pos)
         print(
-            f"From ({first_pos[0]},{first_pos[1]}), go {steps} steps {prev_direction} to point ({curr_pos[0]},{curr_pos[1]})")
+            f"From ({reverse_first_pos[0]},{reverse_first_pos[1]}), go {steps} steps {prev_direction} to point ({reverse_curr_pos[0]},{reverse_curr_pos[1]})")
 
     def printMainMenu(self):
-        """Prints the main menu to the user terminal."""
         print("Welcome to ProductFinder(Alpha Release Version) by CoGPT")
         print("1) go get product!")
         print("2) settings")
@@ -93,9 +167,8 @@ class FinderView:
         return choice
 
     def printSettingMenu(self):
-        """Prints the settings menu to the user terminal."""
-        print("1) set rotation (under development)")
-        print("2) set algorithm option (under development)")
+        print("1) set rotation")
+        print("2) set algorithm option")
         print("3) set MapSize")
         print("4) set worker")
         print("5) set shelves")
@@ -117,7 +190,7 @@ class FinderView:
         dest_col = int(dest_input[1])
         return (dest_row, dest_col)
 
-    def inputWorker(self):
+    def inputWorker(self, mapSize: (int, int), rotation: int):
         worker_input = input("please input worker location(eg. 1 2): ").split()
         worker_row = int(worker_input[0])
         worker_col = int(worker_input[1])
