@@ -31,6 +31,10 @@ To run the program, you may:
 	2)open the command line terminal from the directory, and use the command "python main.py" to run the program
 
 ## Get start
+To run the program, you may:
+    1)open ProductFinder directory in Pycharm, VScode or any other IDE and run the main.py.
+    2)open the command line terminal from the directory, and use the command "python main.py" to run the program
+
 After running the program, you will see the following interface:
 ```bash
 Welcome to the ProductFinder!
