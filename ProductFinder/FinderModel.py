@@ -1,6 +1,8 @@
-from tqdm import tqdm
 import heapq
 from itertools import permutations
+import multiprocessing
+import time
+
 
 class FinderModel:
     def CreateObstacles(self, mapSize, shelves):
@@ -32,7 +34,6 @@ class FinderModel:
                 return False
             return True
 
-
         # Run BFS until the destination is found
         while queue:
             row, col, path = queue.pop(0)
@@ -51,8 +52,8 @@ class FinderModel:
         # If the destination was not found, return an empty path
         return []
 
-    def getPath(self, origin: (int, int), destination: (int, int),
-                obstacles: [[int]]) -> (int, int):
+    def __getPath(self, origin: (int, int), destination: (int, int),
+                  obstacles: [[int]]) -> (int, int):
 
         rows, cols = len(obstacles), len(obstacles[0])
         closest = None
@@ -135,60 +136,59 @@ class FinderModel:
                 path += pathCache[best_path[i]][best_path[i + 1]]
 
         return ans, path
+    def generate_valid_access_points(self, obstacle_matrix, midway_points):
+        access_points = []
+        directions = [(0, -1), (-1, 0), (0, 1), (1, 0)]
+        for point in midway_points:
+            for direction in directions:
+                new_point = (point[0] + direction[0], point[1] + direction[1])
+                if 0 <= new_point[0] < len(obstacle_matrix) and 0 <= new_point[1] < len(obstacle_matrix[0]) and \
+                        obstacle_matrix[new_point[0]][new_point[1]] == 0:
+                    access_points.append(new_point)
+                    break
+        return access_points
 
+    def shortest_path(self, maze, obstacles, start, end):
+        def is_valid(x, y):
+            return 0 <= x < maze[0] and 0 <= y < maze[1] and (x, y) not in obstacles
+
+        def heuristic(x, y):
+            return abs(x - end[0]) + abs(y - end[1])
+
+        visited = set()
+        queue = [(heuristic(*start), 0, start, [])]
+        moves = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+        while queue:
+            _, cost, current, path = heapq.heappop(queue)
+            if current == end:
+                return cost, path + [current]
+
+            if current not in visited:
+                visited.add(current)
+                for dx, dy in moves:
+                    x, y = current[0] + dx, current[1] + dy
+                    if is_valid(x, y) and (x, y) not in visited:
+                        heapq.heappush(queue, (cost + 1 + heuristic(x, y), cost + 1, (x, y), path + [current]))
+        return float('inf'), []
+    def generate_adj_matrix(self, maze, obstacles, points):
+        adj_matrix = {}
+        for i, point1 in enumerate(points):
+            adj_matrix[i] = {}
+            for j, point2 in enumerate(points):
+                if point1 != point2:
+                    adj_matrix[i][j], path_coords = self.shortest_path(maze, obstacles, point1, point2)
+                    adj_matrix[i][(j, "path")] = path_coords
+        return adj_matrix
     def branch_and_bound(self, maze_size, obstacles, obstacle_matrix, start_point, midway_points):
-        def generate_valid_access_points(obstacle_matrix, midway_points):
-            access_points = []
-            directions = [(0, -1), (-1, 0), (0, 1), (1, 0)]
-            for point in midway_points:
-                for direction in directions:
-                    new_point = (point[0] + direction[0], point[1] + direction[1])
-                    if 0 <= new_point[0] < maze_size[0] and 0 <= new_point[1] < maze_size[1] and obstacle_matrix[new_point[0]][new_point[1]] == 0:
-                        access_points.append(new_point)
-                        break
-            return access_points
-        def generate_adj_matrix(maze, obstacles, points):
-            adj_matrix = {}
-            for i, point1 in enumerate(points):
-                adj_matrix[i] = {}
-                for j, point2 in enumerate(points):
-                    if point1 != point2:
-                        adj_matrix[i][j], path_coords = shortest_path(maze, obstacles, point1, point2)
-                        adj_matrix[i][(j, "path")] = path_coords
-            return adj_matrix
 
-        def shortest_path(maze, obstacles, start, end):
-            def is_valid(x, y):
-                return 0 <= x < maze[0] and 0 <= y < maze[1] and (x, y) not in obstacles
-
-            def heuristic(x, y):
-                return abs(x - end[0]) + abs(y - end[1])
-
-            visited = set()
-            queue = [(heuristic(*start), 0, start, [])]
-            moves = [(0, 1), (1, 0), (0, -1), (-1, 0)]
-
-            while queue:
-                _, cost, current, path = heapq.heappop(queue)
-                if current == end:
-                    return cost, path + [current]
-
-                if current not in visited:
-                    visited.add(current)
-                    for dx, dy in moves:
-                        x, y = current[0] + dx, current[1] + dy
-                        if is_valid(x, y) and (x, y) not in visited:
-                            heapq.heappush(queue, (cost + 1 + heuristic(x, y), cost + 1, (x, y), path + [current]))
-            return float('inf'), []
-
-        access_points = generate_valid_access_points(obstacle_matrix, midway_points)
-        points = list(set([start_point] + access_points))
-        adj_matrix = generate_adj_matrix(maze_size, obstacles, points)
+        points = list(set([start_point] + midway_points))
+        adj_matrix = self.generate_adj_matrix(maze_size, obstacles, points)
 
         shortest_path_length = float('inf')
         shortest_path_coords = None
 
-        for path in tqdm(permutations(range(1, len(points)))):
+        for path in permutations(range(1, len(points))):
             path = [0] + list(path) + [0]
             path_length = sum(adj_matrix[path[i]][path[i + 1]] for i in range(len(path) - 1))
 
@@ -202,6 +202,54 @@ class FinderModel:
 
         return shortest_path_coords
 
+
+
+    def get_optimal_path_process(self, queue, settings, destination_list):
+        obstacle_matrix = self.CreateObstacles(
+            mapSize=settings['mapSize'],
+            shelves=settings['shelves'])
+        access_points = self.generate_valid_access_points(obstacle_matrix, destination_list)
+
+        if settings['algorithm'] == 'tspDp':
+            _, path = self.tspDp([settings['worker']] + access_points, obstacle_matrix)
+        elif settings['algorithm'] == 'branchAndBound':
+            path = self.branch_and_bound(maze_size=settings['mapSize'],
+                                         obstacles=settings['shelves'],
+                                         obstacle_matrix=obstacle_matrix,
+                                         start_point=settings['worker'],
+                                         midway_points=access_points)
+
+        queue.put(path)
+
+    def get_default_path(self, settings, destination_list):
+        obstacle_matrix = self.CreateObstacles(
+            mapSize=settings['mapSize'],
+            shelves=settings['shelves'])
+        access_points = self.generate_valid_access_points(obstacle_matrix, destination_list)
+        points = [settings['worker']] + list(set(access_points)) + [settings['worker']]
+        path_coords = []
+        for i in range(len(points) - 1):
+            path_coords += self.shortest_path(settings['mapSize'], settings['shelves'], points[i], points[i+1])[1]
+        return path_coords
+
+
+
+    def get_optimal_path(self, settings, destination_list):
+        queue = multiprocessing.Queue()
+        process = multiprocessing.Process(target=self.get_optimal_path_process,
+                                          args=(queue, settings, destination_list))
+        process.start()
+        process.join(settings['countDown'])  # Wait for settings['countDown'] seconds
+
+        if process.is_alive():
+            print("Terminating process as it took longer than 15 seconds, returning the default path")
+            process.terminate()
+            process.join()
+            path = self.get_default_path(settings, destination_list)
+        else:
+            path = queue.get()
+
+        return path
 
 def main():
     # Define the origin and destinations

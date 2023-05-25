@@ -173,9 +173,10 @@ class FinderView:
         print("3) set MapSize")
         print("4) set worker")
         print("5) set shelves")
-        print("6) print current setting")
-        print("7) back to main menu")
-        choice = input("please choose(1~7): ")
+        print("6) set countDown")
+        print("7) print current setting")
+        print("8) back to main menu")
+        choice = input("please choose(1~8): ")
         return choice
 
     def printCurrentSetting(self, setting):
@@ -184,9 +185,10 @@ class FinderView:
         print("map size:", setting["mapSize"])
         print("worker: ", setting["worker"])
         print("shelves: ", setting["shelves"])
+        print("countDown: ", setting["countDown"])
 
-    def inputDestination(self, product_dict: {}, settings: {}):
-        method = input("Choose your input method\n1: input by product ID \n2: input by (x,y) \n")
+    def inputDestination(self, settings):
+        method = input("Choose your input method\n1: input by (x,y) \n2: input by product ID \n")
         destination_number = int(input('how many destination do you want to input? '))
         destination_list = []
         i = 0
@@ -204,8 +206,8 @@ class FinderView:
             elif method == '2':
                 destination_product = input("please input your #{} product ID: ".format(i+1))
                 try:
-                    destination_row = product_dict[destination_product][0]
-                    destination_col = product_dict[destination_product][1]
+                    destination_row = settings['products'][destination_product][0]
+                    destination_col = settings['products'][destination_product][1]
                 except:
                     print('product ID not found')
                     continue
@@ -227,12 +229,16 @@ class FinderView:
         return (map_size_row, map_size_col)
 
     def inputAlgorithm(self):
-        algorithm = input("please input algorithm: ")
-        return algorithm
+        algorithm = input("please choose an algorithm(1 or 2): \n1) tspDp \n2) Branch & Bound\n")
+        return 'tspDp' if algorithm == '1' else 'branchAndBound'
 
     def inputRotation(self):
         rotation = input("please input rotation: ")
         return int(rotation)
+
+    def inputcountDown(self):
+        countDown = input("please input countDown number(second): ")
+        return int(countDown)
 
     '''
     def inputShelves(self):
