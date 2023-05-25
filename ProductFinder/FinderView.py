@@ -162,7 +162,8 @@ class FinderView:
         print("Welcome to ProductFinder(Alpha Release Version) by CoGPT")
         print("1) go get product!")
         print("2) settings")
-        print("3) exit")
+        print('3) run tests')
+        print("4) exit")
         choice = input("please choose(1/2/3): ")
         return choice
 
@@ -184,11 +185,34 @@ class FinderView:
         print("worker: ", setting["worker"])
         print("shelves: ", setting["shelves"])
 
-    def inputDestination(self):
-        dest_input = input("please input your destination(eg. 1 2): ").split()
-        dest_row = int(dest_input[0])
-        dest_col = int(dest_input[1])
-        return (dest_row, dest_col)
+    def inputDestination(self, product_dict: {}, settings: {}):
+        method = input("Choose your input method\n1: input by product ID \n2: input by (x,y) \n")
+        destination_number = int(input('how many destination do you want to input? '))
+        destination_list = []
+        i = 0
+        while i < destination_number:
+            if method == '1':
+                destination_input = input("please input your #{} product coordinates(eg. 1 2): ".format(i+1)).split()
+                if len(destination_input) != 2:
+                    print('wrong input format')
+                    continue
+                destination_row = int(destination_input[0])
+                destination_col = int(destination_input[1])
+                if destination_row < 0 or destination_row > settings['mapSize'][0] or destination_col < 0 or destination_col > settings['mapSize'][1]:
+                    print('coordinate out of range')
+                    continue
+            elif method == '2':
+                destination_product = input("please input your #{} product ID: ".format(i+1))
+                try:
+                    destination_row = product_dict[destination_product][0]
+                    destination_col = product_dict[destination_product][1]
+                except:
+                    print('product ID not found')
+                    continue
+
+            destination_list.append((destination_row, destination_col))
+            i+=1
+        return destination_list
 
     def inputWorker(self, mapSize: (int, int), rotation: int):
         worker_input = input("please input worker location(eg. 1 2): ").split()
@@ -235,4 +259,5 @@ class FinderView:
             X = int(float(X))
             Y = int(float(Y))
             product_dict[ID] = (X, Y)
+        # print(product_dict)
         return product_dict

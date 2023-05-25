@@ -14,7 +14,8 @@ def main():
         "rotation": 1,
         "algorithm": "BFS",
         "worker": (0, 0),
-        "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)]
+        "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)],
+        "products": {}
     }
     finderModel = FinderModel()
     finderView = FinderView()

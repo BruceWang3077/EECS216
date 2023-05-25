@@ -1,4 +1,6 @@
 from tqdm import tqdm
+import heapq
+from itertools import permutations
 
 class FinderModel:
     def CreateObstacles(self, mapSize, shelves):
@@ -134,6 +136,72 @@ class FinderModel:
 
         return ans, path
 
+    def branch_and_bound(self, maze_size, obstacles, obstacle_matrix, start_point, midway_points):
+        def generate_valid_access_points(obstacle_matrix, midway_points):
+            access_points = []
+            directions = [(0, -1), (-1, 0), (0, 1), (1, 0)]
+            for point in midway_points:
+                for direction in directions:
+                    new_point = (point[0] + direction[0], point[1] + direction[1])
+                    if 0 <= new_point[0] < maze_size[0] and 0 <= new_point[1] < maze_size[1] and obstacle_matrix[new_point[0]][new_point[1]] == 0:
+                        access_points.append(new_point)
+                        break
+            return access_points
+        def generate_adj_matrix(maze, obstacles, points):
+            adj_matrix = {}
+            for i, point1 in enumerate(points):
+                adj_matrix[i] = {}
+                for j, point2 in enumerate(points):
+                    if point1 != point2:
+                        adj_matrix[i][j], path_coords = shortest_path(maze, obstacles, point1, point2)
+                        adj_matrix[i][(j, "path")] = path_coords
+            return adj_matrix
+
+        def shortest_path(maze, obstacles, start, end):
+            def is_valid(x, y):
+                return 0 <= x < maze[0] and 0 <= y < maze[1] and (x, y) not in obstacles
+
+            def heuristic(x, y):
+                return abs(x - end[0]) + abs(y - end[1])
+
+            visited = set()
+            queue = [(heuristic(*start), 0, start, [])]
+            moves = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+            while queue:
+                _, cost, current, path = heapq.heappop(queue)
+                if current == end:
+                    return cost, path + [current]
+
+                if current not in visited:
+                    visited.add(current)
+                    for dx, dy in moves:
+                        x, y = current[0] + dx, current[1] + dy
+                        if is_valid(x, y) and (x, y) not in visited:
+                            heapq.heappush(queue, (cost + 1 + heuristic(x, y), cost + 1, (x, y), path + [current]))
+            return float('inf'), []
+
+        access_points = generate_valid_access_points(obstacle_matrix, midway_points)
+        points = list(set([start_point] + access_points))
+        adj_matrix = generate_adj_matrix(maze_size, obstacles, points)
+
+        shortest_path_length = float('inf')
+        shortest_path_coords = None
+
+        for path in tqdm(permutations(range(1, len(points)))):
+            path = [0] + list(path) + [0]
+            path_length = sum(adj_matrix[path[i]][path[i + 1]] for i in range(len(path) - 1))
+
+            if path_length < shortest_path_length:
+                shortest_path_length = path_length
+                shortest_path_coords = []
+                for i in range(len(path) - 1):
+                    shortest_path_coords += adj_matrix[path[i]][(path[i + 1], "path")]
+                    if i != len(path) - 2:
+                        shortest_path_coords.pop()
+
+        return shortest_path_coords
+
 
 def main():
     # Define the origin and destinations
@@ -157,7 +225,31 @@ def main():
 
     # Print the result
     if path:
-        print("Path found:", path)
+        print("TSP Path found:", path)
+    else:
+        print("No path found")
+
+    # Example usage
+    maze_size = (40, 21)
+    obstacles = [(18, 0), (16, 0), (14, 0), (18, 4), (16, 4), (24, 20), (14, 4), (22, 20), (21, 4), (19, 4), (17, 4),
+                 (11, 8), (18, 8), (16, 8), (14, 8), (19, 8), (15, 8), (18, 12), (16, 12), (21, 12), (12, 0), (15, 12),
+                 (10, 0), (18, 16), (8, 0), (20, 16), (11, 16), (16, 16), (12, 4), (10, 4), (37, 18), (8, 4), (7, 8),
+                 (12, 8), (10, 8), (9, 12), (7, 12), (14, 12), (12, 12), (10, 12), (9, 16), (7, 16), (14, 16), (4, 0),
+                 (12, 16), (2, 0), (10, 16), (20, 2), (1, 4), (6, 4), (4, 4), (20, 6), (8, 8), (6, 8), (20, 10),
+                 (8, 12), (6, 12), (8, 16), (6, 16), (30, 0), (18, 2), (26, 18), (16, 2), (24, 18), (14, 2), (22, 18),
+                 (2, 4), (27, 18), (11, 6), (18, 6), (16, 6), (14, 6), (21, 6), (19, 6), (17, 6), (11, 10), (15, 6),
+                 (18, 10), (16, 10), (21, 10), (19, 10), (17, 10), (15, 10), (20, 14), (11, 14), (18, 14), (16, 14),
+                 (2, 16), (28, 0), (26, 0), (24, 0), (18, 18), (21, 18), (32, 0), (17, 18), (12, 6), (10, 6), (9, 10),
+                 (13, 6), (7, 10), (14, 10), (12, 10), (10, 10), (7, 14), (14, 14), (12, 14), (10, 14), (22, 0),
+                 (20, 0), (14, 18), (12, 18), (10, 18), (19, 18), (20, 4), (8, 6), (6, 6), (20, 8), (8, 10), (6, 10),
+                 (20, 12), (8, 14), (6, 14)]
+    midway_points = [(2, 3), (14, 5), (19, 9)]
+
+    shortest_path_length, shortest_path_coords = branch_and_bound(maze_size, obstacles, origin, midway_points)
+
+    # Print the result
+    if path:
+        print("Branch & Bound Path found:", shortest_path_coords)
     else:
         print("No path found")
 
