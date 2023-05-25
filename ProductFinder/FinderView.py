@@ -1,5 +1,5 @@
-from tqdm import tqdm
-
+import sys
+from datetime import datetime
 
 class FinderView:
     def __init__(self):
@@ -45,7 +45,8 @@ class FinderView:
             row = ""
             for j in range(mapSize[1]):
                 if (i, j) == worker:
-                    row += " ✌ "
+                    # row += " ✌ "
+                    row += " ✪ "
                 elif (i, j) in shelves:
                     if (i, j) in highlight:
                         row += "▓◎▓"
@@ -259,7 +260,7 @@ class FinderView:
         file = open(input("please input file path:"), "r")
         product_dict = {}
         next(file)
-        for line in tqdm(file):
+        for line in file:
             ID, X, Y = line.split('\t')
             # drop the decimal part
             X = int(float(X))
@@ -267,3 +268,26 @@ class FinderView:
             product_dict[ID] = (X, Y)
         # print(product_dict)
         return product_dict
+
+    def exportResult(self, settings, optimal_path, destination_list):
+        # Get the current date and time
+        now = datetime.now()
+        formatted_date_time = now.strftime("%m-%d_%H-%M-%S")
+
+        # Create a file name with the current date and time
+        file_name = f'Navigation_{formatted_date_time}.txt'
+
+        # Redirect the standard output to a file
+        with open(file_name, 'w', encoding='utf-8') as file:
+            sys.stdout = file
+            self.printMap(mapSize=settings['mapSize'], worker=settings["worker"],
+                               shelves=settings["shelves"], path=optimal_path, highlight=destination_list,
+                               rotation=settings['rotation'])
+
+            # Print the directions for the optimal path.
+            self.printDirection(path=optimal_path, rotation=settings['rotation'],
+                                     mapSize=settings['mapSize'])
+
+        # Reset the standard output to the original stream
+        sys.stdout = sys.__stdout__
+        print(f'Output file: {file_name}')

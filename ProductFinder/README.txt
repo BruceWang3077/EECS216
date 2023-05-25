@@ -15,12 +15,14 @@ This Beta version has all the basic features available, such as：
 	6)worker location manual setup.
 New features in Beta version:
 	1) allow using 2 algo(Branch&Bound or tspDp) to get multiple orders
-    	2) introduce multiprocessing to monitor and handle a stack situation
-    	3) allow allocating product coordinates by ProductID
-    	4) add test function to run multiple test cases at once
+    2) introduce multiprocessing to monitor and handle a stack situation
+    3) allow allocating product coordinates by ProductID
+    4) add test function to run multiple test cases at once
+    5) add results export
+    6) add memory usage/runtime comparison
 
 ##Requirements
-This program will use package tqdm. If this is not installed on your working envirement, you may open the command line terminal and use "pip install tqdm" command to install.
+This program will use package memory-profiler. If this is not installed on your working envirement, you may open the command line terminal and use "pip install memory-profiler" command to install.
 
 ##Installation:
 Go to https://github.com/BruceWang3077/EECS216 and download the source code. Our Alpha version is in ProductFinder folder.
