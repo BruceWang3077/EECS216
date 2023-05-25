@@ -159,12 +159,12 @@ class FinderView:
             f"From ({reverse_first_pos[0]},{reverse_first_pos[1]}), go {steps} steps {prev_direction} to point ({reverse_curr_pos[0]},{reverse_curr_pos[1]})")
 
     def printMainMenu(self):
-        print("Welcome to ProductFinder(Alpha Release Version) by CoGPT")
+        print("Welcome to ProductFinder(Beta Release Version) by CoGPT")
         print("1) go get product!")
         print("2) settings")
         print('3) run tests')
         print("4) exit")
-        choice = input("please choose(1/2/3): ")
+        choice = input("please choose(1/2/3/4): ")
         return choice
 
     def printSettingMenu(self):

@@ -88,7 +88,7 @@ class FinderModel:
                     dist = distance
         return closest
 
-    def tsp(self, products: list, obstacles: [[int]]):
+    def tspDp(self, products: list, obstacles: [[int]]):
         n = len(products)
         dist = [[0] * n for i in range(n)]
         pathCache = [[] for i in range(n)]
@@ -221,7 +221,7 @@ def main():
     ]
 
     # Find the closest path to any destination
-    distance, path = finderModel.tsp(testPath, obstacles)
+    distance, path = finderModel.tspDp(testPath, obstacles)
 
     # Print the result
     if path:
