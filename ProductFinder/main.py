@@ -16,6 +16,7 @@ def main():
         "worker": (0, 0),
         "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)],
         "products": {},
+        "orders": [],
         'countDown': 15 # seconds for timeout
     }
     finderModel = FinderModel()

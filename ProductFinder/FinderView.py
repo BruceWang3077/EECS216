@@ -160,25 +160,38 @@ class FinderView:
             f"From ({reverse_first_pos[0]},{reverse_first_pos[1]}), go {steps} steps {prev_direction} to point ({reverse_curr_pos[0]},{reverse_curr_pos[1]})")
 
     def printMainMenu(self):
-        print("Welcome to ProductFinder(Beta Release Version) by CoGPT")
-        print("1) go get product!")
-        print("2) settings")
-        print('3) run tests')
-        print("4) exit")
-        choice = input("please choose(1/2/3/4): ")
-        return choice
+        while True:
+            try:
+                print("Welcome to ProductFinder(Beta Release Version) by CoGPT")
+                print("1) go get product!")
+                print("2) settings")
+                print('3) run tests')
+                print("4) exit")
+                choice = int(input("please choose(1/2/3/4): "))
+                if choice not in range(1, 5):
+                    raise ValueError
+                return choice
+            except ValueError:
+                print("Error: Invalid input. Please enter an integer between 1 and 4.")
 
     def printSettingMenu(self):
-        print("1) set rotation")
-        print("2) set algorithm option")
-        print("3) set MapSize")
-        print("4) set worker")
-        print("5) set shelves")
-        print("6) set countDown")
-        print("7) print current setting")
-        print("8) back to main menu")
-        choice = input("please choose(1~8): ")
-        return choice
+        while True:
+            try:
+                print("1) set rotation")
+                print("2) set algorithm option")
+                print("3) set MapSize")
+                print("4) set worker")
+                print("5) set shelves")
+                print("6) set countDown")
+                print("7) print current setting")
+                print("8) input orders via file")
+                print("9) back to main menu")
+                choice = int(input("please choose(1~9): "))
+                if choice not in range(1, 10):
+                    raise ValueError
+                return choice
+            except ValueError:
+                print("Error: Invalid input. Please enter an integer between 1 and 9.")
 
     def printCurrentSetting(self, setting):
         print("rotation: ", setting['rotation'])
@@ -218,28 +231,63 @@ class FinderView:
         return destination_list
 
     def inputWorker(self, mapSize: (int, int), rotation: int):
-        worker_input = input("please input worker location(eg. 1 2): ").split()
-        worker_row = int(worker_input[0])
-        worker_col = int(worker_input[1])
-        return (worker_row, worker_col)
+        try:
+            worker_input = input("please input worker location(eg. 1 2): ").split()
+            worker_row, worker_col = map(int, worker_input)
+            if 0 < worker_row <= mapSize[0] and 0 < worker_col <= mapSize[1]:
+                return (worker_row, worker_col)
+            else:
+                raise ValueError
+        except ValueError:
+            print(
+                "Error: Invalid input. Please enter two integers separated by a space, within the bounds of the map size.")
+            return (0, 0)
 
     def inputMapSize(self):
-        map_size_input = input("please input map size(rows, colomns)(eg. 40 21): ").split()
-        map_size_row = int(map_size_input[0])
-        map_size_col = int(map_size_input[1])
-        return (map_size_row, map_size_col)
+        try:
+            map_size_input = input("please input map size(rows, columns)(eg. 40 21): ").split()
+            assert len(map_size_input) == 2
+            map_size_row, map_size_col = map(int, map_size_input)
+            if map_size_row > 0 and map_size_col > 0:
+                return (map_size_row, map_size_col)
+            else:
+                raise ValueError
+        except (ValueError, AssertionError):
+            print("Error: invalid input. Please enter two positive integers separated by a space.")
+            return (40, 21)
 
     def inputAlgorithm(self):
-        algorithm = input("please choose an algorithm(1 or 2): \n1) tspDp \n2) Branch & Bound\n")
-        return 'tspDp' if algorithm == '1' else 'branchAndBound'
+        try:
+            algorithm = input("please choose an algorithm(1 or 2): \n1) tspDp \n2) Branch & Bound\n")
+            assert algorithm in ['1', '2']
+            return 'tspDp' if algorithm == '1' else 'branchAndBound'
+        except AssertionError:
+            print("Error: invalid input. Please enter either '1' or '2'.")
+            return 'tspDp'
 
     def inputRotation(self):
         rotation = input("please input rotation: ")
-        return int(rotation)
+        try:
+            rotation = int(rotation)
+            if rotation < 1 or rotation > 4:
+                raise ValueError
+        except ValueError:
+            print("Error: rotation should be an integer in the range of 1 to 4.")
+            return 1
+        else:
+            return int(rotation)
 
     def inputcountDown(self):
         countDown = input("please input countDown number(second): ")
-        return int(countDown)
+        try:
+            countDown = int(countDown)
+            if countDown < 1:
+                raise ValueError
+        except ValueError:
+            print("Error: countDown should be a positive integer.")
+            return 15
+        else:
+            return int(countDown)
 
     '''
     def inputShelves(self):
@@ -257,17 +305,22 @@ class FinderView:
     '''
 
     def ReadProductFromFile(self):
-        file = open(input("please input file path:"), "r")
-        product_dict = {}
-        next(file)
-        for line in file:
-            ID, X, Y = line.split('\t')
-            # drop the decimal part
-            X = int(float(X))
-            Y = int(float(Y))
-            product_dict[ID] = (X, Y)
-        # print(product_dict)
-        return product_dict
+        filename = input("Please input file path:")
+        try:
+            file = open(filename, "r")
+            product_dict = {}
+            next(file)
+            for line in file:
+                ID, X, Y = line.split('\t')
+                # drop the decimal part
+                X = int(float(X))
+                Y = int(float(Y))
+                product_dict[ID] = (X, Y)
+            # print(product_dict)
+            return product_dict
+        except FileNotFoundError:
+            print(f"Error: file '{filename}' not found.")
+            return None
 
     def exportResult(self, settings, optimal_path, destination_list):
         # Get the current date and time
@@ -291,3 +344,20 @@ class FinderView:
         # Reset the standard output to the original stream
         sys.stdout = sys.__stdout__
         print(f'Output file: {file_name}')
+
+    def readOrder(self):
+        filename = input("Please input file path:")
+        try:
+            f = open(filename, "r")
+            orders = []
+            for line in f.readlines():
+                order = line.strip().split(', ')
+                order = [int(product) for product in order]
+                orders.append(order)
+            return orders
+        except FileNotFoundError:
+            print(f"Error: File '{filename}' not found.")
+            return None
+
+
+

@@ -131,15 +131,20 @@ class FinderController:
                 self.settings['worker'] = self.view.inputWorker()
             elif choice == "5":
                 # The user wants to change the shelves.767
-                ProductLoc = self.view.ReadProductFromFile()
-                self.settings['shelves'] = list(set(ProductLoc.values()))
-                self.settings['products'] = ProductLoc
+                product_loc = self.view.ReadProductFromFile()
+                if product_loc is not None:
+                    self.settings['shelves'] = list(set(product_loc.values()))
+                    self.settings['products'] = product_loc
             elif choice == "6":
                 self.settings['countDown'] = self.view.inputcountDown()
             elif choice == "7":
                 # Print the current settings.
                 self.view.printCurrentSetting(self.settings)
             elif choice == "8":
+                orders = self.view.readOrder()
+                if orders is not None:
+                    self.settings['orders'] = orders
+            elif choice == "9":
                 # The user wants to go back to the main menu.
                 break
             else:
