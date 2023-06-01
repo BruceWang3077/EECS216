@@ -352,22 +352,44 @@ class FinderModel:
             current_row = best_col_index
         return optimal_path
 
-    def NN(self,obstacle_matrix, start_point,midway_points,access_points):
+    def NN(self,obstacle_matrix, start_point,midway_points):
         # print(midway_points)
         # access_points=self.generate_valid_access_points(obstacle_matrix,midway_points)
         curr_pos=start_point
         path=[]
+        access_points={}
+        for point in midway_points:
+            access_points[point]=self.generate_valid_access_points(obstacle_matrix,[point],number='all')
         while access_points:
-            all_paths=[self.findPath(curr_pos,dest,obstacle_matrix) for dest in access_points]
-            all_lenths=[len(path) for path in all_paths]
-            shortest=min(all_lenths)
-            index=all_lenths.index(shortest)
-            next_pos=access_points[index]
+            curr_round_min=None
+            for product in access_points:
+                paths_to_this=[self.findPath(curr_pos,dest,obstacle_matrix)for dest in access_points[product]]
+                lenths_to_this=[len(path) for path in paths_to_this]
+                min_len=min(lenths_to_this)
+                min_len_index=lenths_to_this.index(min_len)
+                if curr_round_min is None or curr_round_min[0]>min_len:
+                    curr_round_min=(min_len,product,min_len_index)
+            next_pos=access_points[curr_round_min[1]][curr_round_min[2]]
+            del access_points[curr_round_min[1]]
             path+=self.findPath(curr_pos,next_pos,obstacle_matrix)
-            path=path[0:len(path)-1]
-            access_points.remove(next_pos)
-            curr_pos=next_pos
-        path+=self.findPath(curr_pos,start_point,obstacle_matrix)
+            path = path[0:len(path) - 1]
+            curr_pos = next_pos
+        path += self.findPath(curr_pos, start_point, obstacle_matrix)
+
+
+
+
+        # while access_points:
+        #     all_paths=[self.findPath(curr_pos,dest,obstacle_matrix) for dest in access_points]
+        #     all_lenths=[len(path) for path in all_paths]
+        #     shortest=min(all_lenths)
+        #     index=all_lenths.index(shortest)
+        #     next_pos=access_points[index]
+        #     path+=self.findPath(curr_pos,next_pos,obstacle_matrix)
+        #     path=path[0:len(path)-1]
+        #     access_points.remove(next_pos)
+        #     curr_pos=next_pos
+        # path+=self.findPath(curr_pos,start_point,obstacle_matrix)
         return path
     def get_optimal_path_process(self, queue, settings, destination_list):
         obstacle_matrix = self.CreateObstacles(
@@ -381,7 +403,7 @@ class FinderModel:
         elif settings['algorithm'] == 'branchAndBound':
             path = self.BB_multi(settings['mapSize'], settings['shelves'], settings['worker'], destination_list)
         elif settings['algorithm'] == 'NearestNeighbor':
-            path=self.NN(obstacle_matrix, settings['worker'], destination_list,access_points)
+            path=self.NN(obstacle_matrix, settings['worker'], destination_list)
         queue.put(path)
 
     def get_default_path(self, settings, destination_list):
