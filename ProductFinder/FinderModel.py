@@ -37,7 +37,6 @@ class FinderModel:
         # Run BFS until the destination is found
         while queue:
             row, col, path = queue.pop(0)
-
             # Check if the current cell is the destination
             if (row, col) == destination:
                 return path + [(row, col)]
@@ -351,6 +350,13 @@ class FinderModel:
             current_row = best_col_index
         return optimal_path
 
+    def NN(self,obstacle_matrix, start_point,midway_points,access_points):
+        # print(midway_points)
+        # access_points=self.generate_valid_access_points(obstacle_matrix,midway_points)
+        print(access_points)
+        path1=self.findPath(start_point,access_points[0],obstacle_matrix)
+        print(path1)
+        return []
     def get_optimal_path_process(self, queue, settings, destination_list):
         obstacle_matrix = self.CreateObstacles(
             mapSize=settings['mapSize'],
@@ -362,7 +368,8 @@ class FinderModel:
             _, path = self.tspDp([settings['worker']] + access_points, obstacle_matrix)
         elif settings['algorithm'] == 'branchAndBound':
             path = self.BB_multi(settings['mapSize'], settings['shelves'], settings['worker'], destination_list)
-
+        elif settings['algorithm'] == 'NearestNeighbor':
+            path=self.NN(settings['shelves'], settings['worker'], destination_list,access_points)
         queue.put(path)
 
     def get_default_path(self, settings, destination_list):
