@@ -258,9 +258,14 @@ class FinderView:
 
     def inputAlgorithm(self):
         try:
-            algorithm = input("please choose an algorithm(1 or 2): \n1) tspDp \n2) Branch & Bound\n")
-            assert algorithm in ['1', '2']
-            return 'tspDp' if algorithm == '1' else 'branchAndBound'
+            algorithm = input("please choose an algorithm(1 or 2 or 3): \n1) tspDp \n2) Branch & Bound\n3) Nearest Neighbor")
+            assert algorithm in ['1', '2','3']
+            if algorithm == '1':
+                return 'tspDp'
+            elif algorithm == '2':
+                return 'branchAndBound'
+            elif algorithm == '3':
+                return "NearestNeighbor"
         except AssertionError:
             print("Error: invalid input. Please enter either '1' or '2'.")
             return 'tspDp'

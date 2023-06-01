@@ -1,6 +1,7 @@
 # Import the FinderModel and FinderView classes.
 from FinderModel import FinderModel
 from FinderView import FinderView
+
 from memory_profiler import memory_usage
 import time
 
