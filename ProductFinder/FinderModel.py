@@ -364,6 +364,7 @@ class FinderModel:
             index=all_lenths.index(shortest)
             next_pos=access_points[index]
             path+=self.findPath(curr_pos,next_pos,obstacle_matrix)
+            path=path[0:len(path)-1]
             access_points.remove(next_pos)
             curr_pos=next_pos
         path+=self.findPath(curr_pos,start_point,obstacle_matrix)
