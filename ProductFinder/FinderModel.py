@@ -38,6 +38,7 @@ class FinderModel:
         while queue:
             row, col, path = queue.pop(0)
             # Check if the current cell is the destination
+
             if (row, col) == destination:
                 return path + [(row, col)]
 
@@ -354,10 +355,19 @@ class FinderModel:
     def NN(self,obstacle_matrix, start_point,midway_points,access_points):
         # print(midway_points)
         # access_points=self.generate_valid_access_points(obstacle_matrix,midway_points)
-        print(access_points)
-        path1=self.findPath(start_point,access_points[0],obstacle_matrix)
-        print(path1)
-        return []
+        curr_pos=start_point
+        path=[]
+        while access_points:
+            all_paths=[self.findPath(curr_pos,dest,obstacle_matrix) for dest in access_points]
+            all_lenths=[len(path) for path in all_paths]
+            shortest=min(all_lenths)
+            index=all_lenths.index(shortest)
+            next_pos=access_points[index]
+            path+=self.findPath(curr_pos,next_pos,obstacle_matrix)
+            access_points.remove(next_pos)
+            curr_pos=next_pos
+        path+=self.findPath(curr_pos,start_point,obstacle_matrix)
+        return path
     def get_optimal_path_process(self, queue, settings, destination_list):
         obstacle_matrix = self.CreateObstacles(
             mapSize=settings['mapSize'],
@@ -370,7 +380,7 @@ class FinderModel:
         elif settings['algorithm'] == 'branchAndBound':
             path = self.BB_multi(settings['mapSize'], settings['shelves'], settings['worker'], destination_list)
         elif settings['algorithm'] == 'NearestNeighbor':
-            path=self.NN(settings['shelves'], settings['worker'], destination_list,access_points)
+            path=self.NN(obstacle_matrix, settings['worker'], destination_list,access_points)
         queue.put(path)
 
     def get_default_path(self, settings, destination_list):
