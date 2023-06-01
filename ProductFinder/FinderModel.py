@@ -1,7 +1,7 @@
 import heapq
 from itertools import permutations
 import multiprocessing
-import time
+import copy
 
 
 class FinderModel:
@@ -136,6 +136,7 @@ class FinderModel:
                 path += pathCache[best_path[i]][best_path[i + 1]]
 
         return ans, path
+
     def generate_valid_access_points(self, obstacle_matrix, midway_points):
         access_points = []
         directions = [(0, -1), (-1, 0), (0, 1), (1, 0)]
@@ -171,6 +172,7 @@ class FinderModel:
                     if is_valid(x, y) and (x, y) not in visited:
                         heapq.heappush(queue, (cost + 1 + heuristic(x, y), cost + 1, (x, y), path + [current]))
         return float('inf'), []
+
     def generate_adj_matrix(self, maze, obstacles, points):
         adj_matrix = {}
         for i, point1 in enumerate(points):
@@ -180,6 +182,7 @@ class FinderModel:
                     adj_matrix[i][j], path_coords = self.shortest_path(maze, obstacles, point1, point2)
                     adj_matrix[i][(j, "path")] = path_coords
         return adj_matrix
+
     def branch_and_bound(self, maze_size, obstacles, obstacle_matrix, start_point, midway_points):
 
         points = list(set([start_point] + midway_points))
@@ -202,7 +205,151 @@ class FinderModel:
 
         return shortest_path_coords
 
+    def BB_multi(self, mapsize, obstacles, start_point, destination_list):
+        """
+        :param mapsize:
+        :param obstacles: list of obstacles' coordinates
+        :param start_point:
+        :param destination_list: list of destination coordinates, exclude start and end point
+        :return: list of nodes' coordinates in optimal path
+        """
 
+        def generate_adj_matrix(mapsize, obstacles, start_point, destination_list):
+            """
+            :param mapsize:
+            :param obstacles: list of obstacles' coordinates
+            :param start_point:
+            :param destination_list: list of destination coordinates, exclude start and end point
+            :return: adjacency matrix
+            """
+            obstacle_matrix = self.CreateObstacles(mapsize, obstacles)
+            index_point_list = []
+            directions = [(0, -1), (-1, 0), (0, 1), (1, 0)]
+            for point in destination_list:
+                for direction in directions:
+                    new_point = (point[0] + direction[0], point[1] + direction[1])
+                    if 0 <= new_point[0] < mapsize[0] and 0 <= new_point[1] < mapsize[1] and \
+                            obstacle_matrix[new_point[0]][new_point[1]] == 0:
+                        # index_point_list.append(shelve_point; direction; access_point)
+                        index_point_list.append(
+                            '{},{};{},{};{},{}'.format(point[0], point[1], direction[0], direction[1], new_point[0],
+                                                       new_point[1]))
+            # print(index_point_list)
+            index_point_list.append(
+                '{},{};0,0;{},{}'.format(start_point[0], start_point[1], start_point[0], start_point[1]))
+
+            """
+            adj_matrix = {
+                '1,1;0,-1;1,0': {
+                    '1,1;0,-1;1,0': (path_length, [path]),
+                    '1,1;-1,0;0,1': (path_length, [path]),
+                    ...
+            """
+            adj_matrix = {}
+            for p1 in index_point_list:
+                adj_matrix[p1] = {}
+                for p2 in index_point_list:
+                    if p1.split(';')[0] == p2.split(';')[0]:
+                        # if they are in the same shelf location, then the path length is infinite and path is empty
+                        adj_matrix[p1][p2] = [float('inf'), []]
+                    else:
+                        # if they are in different shelf location, then the path length is 1 and path is the two points
+                        adj_matrix[p1][p2] = list(self.shortest_path(mapsize, obstacles,
+                                                                     tuple(map(int, (p1.split(';')[2].split(',')))),
+                                                                     tuple(map(int, (p2.split(';')[2].split(','))))))
+            return adj_matrix
+
+        def set_infinity(adj_matrix_ref, rows=None, cols=None):
+            """
+            :param cols: list of columns to set to infinity, format: ['1,1;0,-1;1,0', '1,1;-1,0;0,1', ...]
+            :param rows: list of rows to set to infinity, format: ['1,1;0,-1;1,0', '1,1;-1,0;0,1', ...]
+            :param adj_matrix_ref : original adjacency matrix
+            :return: adj_matrix after setting rows and cols to infinity
+            """
+            adj_matrix = copy.deepcopy(adj_matrix_ref)
+            if cols is None:
+                cols = []
+            if rows is None:
+                rows = []
+            for row in rows:
+                for col in adj_matrix[row]:
+                    adj_matrix[row][col] = [float('inf'), []]
+
+            for row in adj_matrix:
+                for col in cols:
+                    adj_matrix[row][col] = [float('inf'), []]
+            return adj_matrix
+
+        def calculate_reduced_cost(adj_matrix_ref):
+            """
+            :param adj_matrix_ref:
+            :return: reduced cost matrix
+            """
+            adj_matrix = copy.deepcopy(adj_matrix_ref)
+            reduced_cost = 0
+            for row in adj_matrix:
+                min_cost = min([adj_matrix[row][col][0] for col in adj_matrix])
+                if min_cost == float('inf'):
+                    continue
+                for col in adj_matrix[row]:
+                    adj_matrix[row][col][0] -= min_cost
+                reduced_cost += min_cost
+            for col in adj_matrix:
+                min_cost = min([adj_matrix[row][col][0] for row in adj_matrix])
+                if min_cost == float('inf'):
+                    continue
+                for row in adj_matrix:
+                    adj_matrix[row][col][0] -= min_cost
+                reduced_cost += min_cost
+            return reduced_cost
+
+        def other_access_points(index_list, index):
+            """
+            :param index_list: list of index points
+            :param index: index point
+            :return: other access point in the same shelf
+            """
+            res = []
+            for i in index_list:
+                if i.split(';')[0] == index.split(';')[0] and i.split(';')[2] != index.split(';')[2]:
+                    res.append(i)
+            return res
+
+        """ BB_multi function starts here"""
+
+        adj_matrix = generate_adj_matrix(mapsize, obstacles, start_point, destination_list)
+        current_row = '{},{};0,0;{},{}'.format(start_point[0], start_point[1], start_point[0], start_point[1])
+        optimal_path = []
+        while True:
+
+            best_col_index = None
+            min_cost = float('inf')
+            for col in adj_matrix[current_row]:
+                if col.split(';')[2] == col.split(';')[0]:
+                    continue
+                cost = adj_matrix[current_row][col][0] + calculate_reduced_cost(
+                    set_infinity(adj_matrix, rows=[current_row] + other_access_points(list(adj_matrix.keys()), col),
+                                 cols=[col] + other_access_points(list(adj_matrix.keys()), col)))
+                if cost < min_cost:
+                    min_cost = cost
+                    best_col_index = col
+
+            if min_cost == float('inf'):
+                best_col_index = '{},{};0,0;{},{}'.format(start_point[0], start_point[1], start_point[0],
+                                                          start_point[1])
+
+            if optimal_path == []:
+                optimal_path += adj_matrix[current_row][best_col_index][1]
+            else:
+                optimal_path += adj_matrix[current_row][best_col_index][1][1:]
+            if best_col_index.split(';')[2] == best_col_index.split(';')[0]:
+                break
+            adj_matrix = set_infinity(adj_matrix,
+                                      rows=[current_row] + other_access_points(list(adj_matrix.keys()), best_col_index),
+                                      cols=[best_col_index] + other_access_points(list(adj_matrix.keys()),
+                                                                                  best_col_index))
+            current_row = best_col_index
+        return optimal_path
 
     def get_optimal_path_process(self, queue, settings, destination_list):
         obstacle_matrix = self.CreateObstacles(
@@ -210,14 +357,11 @@ class FinderModel:
             shelves=settings['shelves'])
         access_points = self.generate_valid_access_points(obstacle_matrix, destination_list)
 
+        path = []
         if settings['algorithm'] == 'tspDp':
             _, path = self.tspDp([settings['worker']] + access_points, obstacle_matrix)
         elif settings['algorithm'] == 'branchAndBound':
-            path = self.branch_and_bound(maze_size=settings['mapSize'],
-                                         obstacles=settings['shelves'],
-                                         obstacle_matrix=obstacle_matrix,
-                                         start_point=settings['worker'],
-                                         midway_points=access_points)
+            path = self.BB_multi(settings['mapSize'], settings['shelves'], settings['worker'], destination_list)
 
         queue.put(path)
 
@@ -229,10 +373,8 @@ class FinderModel:
         points = [settings['worker']] + list(set(access_points)) + [settings['worker']]
         path_coords = []
         for i in range(len(points) - 1):
-            path_coords += self.shortest_path(settings['mapSize'], settings['shelves'], points[i], points[i+1])[1]
+            path_coords += self.shortest_path(settings['mapSize'], settings['shelves'], points[i], points[i + 1])[1]
         return path_coords
-
-
 
     def get_optimal_path(self, settings, destination_list):
         queue = multiprocessing.Queue()
@@ -282,7 +424,11 @@ def main():
     # Find the closest path to any destination
     distance, path = finderModel.tspDp(midway_points, obstacles)
 
-    #shortest_path_length, shortest_path_coords = branch_and_bound(maze_size, obstacles, origin, midway_points)
+    # Print the result
+    if path:
+        print("TSP Path found:", path)
+    else:
+        print("No path found")
 
     # Example usage
 
@@ -298,13 +444,14 @@ def main():
                  (13, 6), (7, 10), (14, 10), (12, 10), (10, 10), (7, 14), (14, 14), (12, 14), (10, 14), (22, 0),
                  (20, 0), (14, 18), (12, 18), (10, 18), (19, 18), (20, 4), (8, 6), (6, 6), (20, 8), (8, 10), (6, 10),
                  (20, 12), (8, 14), (6, 14)]
+    midway_points = [(2, 3), (14, 5), (19, 9)]
 
-
-
+    shortest_path_length, shortest_path_coords = finderModel.branch_and_bound(maze_size, obstacles, origin,
+                                                                              midway_points)
 
     # Print the result
     if path:
-        print("Branch & Bound Path found:")
+        print("Branch & Bound Path found:", shortest_path_coords)
     else:
         print("No path found")
 

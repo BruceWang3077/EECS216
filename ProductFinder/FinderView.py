@@ -167,8 +167,8 @@ class FinderView:
                 print("2) settings")
                 print('3) run tests')
                 print("4) exit")
-                choice = int(input("please choose(1/2/3/4): "))
-                if choice not in range(1, 5):
+                choice = input("please choose(1/2/3/4): ")
+                if int(choice) not in range(1, 5):
                     raise ValueError
                 return choice
             except ValueError:
@@ -186,8 +186,8 @@ class FinderView:
                 print("7) print current setting")
                 print("8) input orders via file")
                 print("9) back to main menu")
-                choice = int(input("please choose(1~9): "))
-                if choice not in range(1, 10):
+                choice = input("please choose(1~9): ")
+                if int(choice) not in range(1, 10):
                     raise ValueError
                 return choice
             except ValueError:
