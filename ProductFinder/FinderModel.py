@@ -136,7 +136,7 @@ class FinderModel:
 
         return ans, path
 
-    def generate_valid_access_points(self, obstacle_matrix, midway_points):
+    def generate_valid_access_points(self, obstacle_matrix, midway_points, number='one'):
         access_points = []
         directions = [(0, -1), (-1, 0), (0, 1), (1, 0)]
         for point in midway_points:
@@ -145,7 +145,8 @@ class FinderModel:
                 if 0 <= new_point[0] < len(obstacle_matrix) and 0 <= new_point[1] < len(obstacle_matrix[0]) and \
                         obstacle_matrix[new_point[0]][new_point[1]] == 0:
                     access_points.append(new_point)
-                    break
+                    if number == 'one':
+                        break
         return access_points
 
     def shortest_path(self, maze, obstacles, start, end):
@@ -361,7 +362,7 @@ class FinderModel:
         obstacle_matrix = self.CreateObstacles(
             mapSize=settings['mapSize'],
             shelves=settings['shelves'])
-        access_points = self.generate_valid_access_points(obstacle_matrix, destination_list)
+        access_points = self.generate_valid_access_points(obstacle_matrix, destination_list, number='one')
 
         path = []
         if settings['algorithm'] == 'tspDp':
@@ -376,7 +377,7 @@ class FinderModel:
         obstacle_matrix = self.CreateObstacles(
             mapSize=settings['mapSize'],
             shelves=settings['shelves'])
-        access_points = self.generate_valid_access_points(obstacle_matrix, destination_list)
+        access_points = self.generate_valid_access_points(obstacle_matrix, destination_list, number='one')
         points = [settings['worker']] + list(set(access_points)) + [settings['worker']]
         path_coords = []
         for i in range(len(points) - 1):
