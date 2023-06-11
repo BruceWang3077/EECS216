@@ -6,7 +6,7 @@ Table of Contents:
 --Installation
 
 ## Overview
-This Beta version has all the basic features available, such as：
+This Final version has all the basic features available, such as：
 	1)display the overall map with shelf location;
 	2)reading product location data from a file;
 	3)basic setting options;

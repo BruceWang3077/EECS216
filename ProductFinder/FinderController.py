@@ -35,6 +35,9 @@ class FinderController:
                 print("invalid input, please try again")
 
     def test(self):
+        if (len(self.settings['shelves']) < 5):
+            print("please import warehouse data first!")
+            return
         test_cases = [[108335], [108335, 391825, 340367, 286457, 661741],
                       [281610, 342706, 111873, 198029, 366109, 287261, 76283, 254489, 258540, 286457],
                       [427230, 372539, 396879, 391680, 208660, 105912, 332555, 227534, 68048, 188856, 736830, 736831,

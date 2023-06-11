@@ -162,7 +162,7 @@ class FinderView:
     def printMainMenu(self):
         while True:
             try:
-                print("Welcome to ProductFinder(Beta Release Version) by CoGPT")
+                print("Welcome to ProductFinder(Final Release Version) by CoGPT")
                 print("1) go get product!")
                 print("2) settings")
                 print('3) run tests')
