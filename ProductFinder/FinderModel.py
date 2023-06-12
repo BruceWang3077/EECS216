@@ -3,6 +3,30 @@ from itertools import permutations
 import multiprocessing
 import copy
 
+class PriorityQueueItem:
+    def __init__(self, tup):
+        self.priority = tup[0]
+        self.data = tup
+
+    def __lt__(self, other):
+        return self.priority < other.priority
+
+    def __eq__(self, other):
+        return self.priority == other.priority
+
+
+class PriorityQueue:
+    def __init__(self):
+        self.queue = []
+
+    def push(self, item):
+        heapq.heappush(self.queue, PriorityQueueItem(item))
+
+    def pop(self):
+        return heapq.heappop(self.queue).data
+
+    def is_empty(self):
+        return len(self.queue) == 0
 
 class FinderModel:
     def CreateObstacles(self, mapSize, shelves):
@@ -316,68 +340,85 @@ class FinderModel:
                     res.append(i)
             return res
 
-        """ BB_multi function starts here"""
-
-        adj_matrix = generate_adj_matrix(mapsize, obstacles, start_point, destination_list)
-        current_row = '{},{};0,0;{},{}'.format(start_point[0], start_point[1], start_point[0], start_point[1])
-        optimal_path = []
-        while True:
-
-            best_col_index = None
-            min_cost = float('inf')
+        def waiting_to_return(adj_matrix, current_row):
             for col in adj_matrix[current_row]:
                 if col.split(';')[2] == col.split(';')[0]:
                     continue
-                cost = adj_matrix[current_row][col][0] + calculate_reduced_cost(
-                    set_infinity(adj_matrix, rows=[current_row] + other_access_points(list(adj_matrix.keys()), col),
-                                 cols=[col] + other_access_points(list(adj_matrix.keys()), col)))
-                if cost < min_cost:
-                    min_cost = cost
-                    best_col_index = col
+                # except the start point, if there is a column that is not infinity, then return False
+                if adj_matrix[current_row][col][0] != float('inf'):
+                    return False
+            return True
 
-            if min_cost == float('inf'):
-                best_col_index = '{},{};0,0;{},{}'.format(start_point[0], start_point[1], start_point[0],
-                                                          start_point[1])
+        """ BB_multi function starts here"""
 
-            if optimal_path == []:
-                optimal_path += adj_matrix[current_row][best_col_index][1]
-            else:
-                optimal_path += adj_matrix[current_row][best_col_index][1][1:]
-            if best_col_index.split(';')[2] == best_col_index.split(';')[0]:
+        pq = PriorityQueue()
+        cur_optimal_path = []
+        cur_optimal_cost = float('inf')
+
+        adj_matrix = generate_adj_matrix(mapsize, obstacles, start_point, destination_list)
+        current_row = '{},{};0,0;{},{}'.format(start_point[0], start_point[1], start_point[0], start_point[1])
+        cost = calculate_reduced_cost(adj_matrix)
+        path = []
+
+        pq.push((cost, adj_matrix, current_row, path))
+
+        while not pq.is_empty():
+            cost, adj_matrix, current_row, path = pq.pop()
+            if cost >= cur_optimal_cost:
                 break
-            adj_matrix = set_infinity(adj_matrix,
-                                      rows=[current_row] + other_access_points(list(adj_matrix.keys()), best_col_index),
-                                      cols=[best_col_index] + other_access_points(list(adj_matrix.keys()),
-                                                                                  best_col_index))
-            current_row = best_col_index
-        return optimal_path
+            if waiting_to_return(adj_matrix, current_row):
+                cost = cost + adj_matrix[current_row][
+                    '{},{};0,0;{},{}'.format(start_point[0], start_point[1], start_point[0], start_point[1])][0]
+                if cost < cur_optimal_cost:
+                    cur_optimal_cost = cost
+                    cur_optimal_path = path + adj_matrix[current_row][
+                                                  '{},{};0,0;{},{}'.format(start_point[0], start_point[1],
+                                                                           start_point[0],
+                                                                           start_point[1])][1][1:]
+                continue
+            else:
+                for col in adj_matrix[current_row]:
+                    if col.split(';')[2] == col.split(';')[0]:
+                        continue
+                    if adj_matrix[current_row][col][0] == float('inf'):
+                        continue
+                    new_cost = cost + adj_matrix[current_row][col][0]
+                    new_adj_matrix = set_infinity(adj_matrix,
+                                                  rows=[current_row] + other_access_points(list(adj_matrix.keys()),
+                                                                                           current_row),
+                                                  cols=[col] + other_access_points(list(adj_matrix.keys()), col))
+                    new_cost = new_cost + calculate_reduced_cost(new_adj_matrix)
+                    if new_cost < cur_optimal_cost:
+                        if path == []:
+                            new_path = path + adj_matrix[current_row][col][1]
+                        else:
+                            new_path = path + adj_matrix[current_row][col][1][1:]
+                        pq.push((new_cost, new_adj_matrix, col, new_path))
+        return cur_optimal_path
 
-    def NN(self,obstacle_matrix, start_point,midway_points):
+    def NN(self, obstacle_matrix, start_point, midway_points):
         # print(midway_points)
         # access_points=self.generate_valid_access_points(obstacle_matrix,midway_points)
-        curr_pos=start_point
-        path=[]
-        access_points={}
+        curr_pos = start_point
+        path = []
+        access_points = {}
         for point in midway_points:
-            access_points[point]=self.generate_valid_access_points(obstacle_matrix,[point],number='all')
+            access_points[point] = self.generate_valid_access_points(obstacle_matrix, [point], number='all')
         while access_points:
-            curr_round_min=None
+            curr_round_min = None
             for product in access_points:
-                paths_to_this=[self.findPath(curr_pos,dest,obstacle_matrix)for dest in access_points[product]]
-                lenths_to_this=[len(path) for path in paths_to_this]
-                min_len=min(lenths_to_this)
-                min_len_index=lenths_to_this.index(min_len)
-                if curr_round_min is None or curr_round_min[0]>min_len:
-                    curr_round_min=(min_len,product,min_len_index)
-            next_pos=access_points[curr_round_min[1]][curr_round_min[2]]
+                paths_to_this = [self.findPath(curr_pos, dest, obstacle_matrix) for dest in access_points[product]]
+                lenths_to_this = [len(path) for path in paths_to_this]
+                min_len = min(lenths_to_this)
+                min_len_index = lenths_to_this.index(min_len)
+                if curr_round_min is None or curr_round_min[0] > min_len:
+                    curr_round_min = (min_len, product, min_len_index)
+            next_pos = access_points[curr_round_min[1]][curr_round_min[2]]
             del access_points[curr_round_min[1]]
-            path+=self.findPath(curr_pos,next_pos,obstacle_matrix)
+            path += self.findPath(curr_pos, next_pos, obstacle_matrix)
             path = path[0:len(path) - 1]
             curr_pos = next_pos
         path += self.findPath(curr_pos, start_point, obstacle_matrix)
-
-
-
 
         # while access_points:
         #     all_paths=[self.findPath(curr_pos,dest,obstacle_matrix) for dest in access_points]
@@ -391,6 +432,7 @@ class FinderModel:
         #     curr_pos=next_pos
         # path+=self.findPath(curr_pos,start_point,obstacle_matrix)
         return path
+
     def get_optimal_path_process(self, queue, settings, destination_list):
         obstacle_matrix = self.CreateObstacles(
             mapSize=settings['mapSize'],
@@ -403,7 +445,7 @@ class FinderModel:
         elif settings['algorithm'] == 'branchAndBound':
             path = self.BB_multi(settings['mapSize'], settings['shelves'], settings['worker'], destination_list)
         elif settings['algorithm'] == 'NearestNeighbor':
-            path=self.NN(obstacle_matrix, settings['worker'], destination_list)
+            path = self.NN(obstacle_matrix, settings['worker'], destination_list)
         queue.put(path)
 
     def get_default_path(self, settings, destination_list):
@@ -423,6 +465,7 @@ class FinderModel:
                                           args=(queue, settings, destination_list))
         process.start()
         process.join(settings['countDown'])  # Wait for settings['countDown'] seconds
+        print("Processing, please wait...(you will wait for {} seconds at most)".format(settings['countDown']))
 
         if process.is_alive():
             print("Terminating process as it took longer than 15 seconds, returning the default path")
@@ -434,6 +477,7 @@ class FinderModel:
 
         return path
 
+
 def main():
     # Define the origin and destinations
     settings = []
@@ -444,18 +488,27 @@ def main():
 
     # Define the obstacles
     maze_size = (40, 21)
-    temp_obstacles = [(18, 0), (16, 0), (14, 0), (18, 4), (16, 4), (24, 20), (14, 4), (22, 20), (21, 4), (19, 4), (17, 4),
-                 (11, 8), (18, 8), (16, 8), (14, 8), (19, 8), (15, 8), (18, 12), (16, 12), (21, 12), (12, 0), (15, 12),
-                 (10, 0), (18, 16), (8, 0), (20, 16), (11, 16), (16, 16), (12, 4), (10, 4), (37, 18), (8, 4), (7, 8),
-                 (12, 8), (10, 8), (9, 12), (7, 12), (14, 12), (12, 12), (10, 12), (9, 16), (7, 16), (14, 16), (4, 0),
-                 (12, 16), (2, 0), (10, 16), (20, 2), (1, 4), (6, 4), (4, 4), (20, 6), (8, 8), (6, 8), (20, 10),
-                 (8, 12), (6, 12), (8, 16), (6, 16), (30, 0), (18, 2), (26, 18), (16, 2), (24, 18), (14, 2), (22, 18),
-                 (2, 4), (27, 18), (11, 6), (18, 6), (16, 6), (14, 6), (21, 6), (19, 6), (17, 6), (11, 10), (15, 6),
-                 (18, 10), (16, 10), (21, 10), (19, 10), (17, 10), (15, 10), (20, 14), (11, 14), (18, 14), (16, 14),
-                 (2, 16), (28, 0), (26, 0), (24, 0), (18, 18), (21, 18), (32, 0), (17, 18), (12, 6), (10, 6), (9, 10),
-                 (13, 6), (7, 10), (14, 10), (12, 10), (10, 10), (7, 14), (14, 14), (12, 14), (10, 14), (22, 0),
-                 (20, 0), (14, 18), (12, 18), (10, 18), (19, 18), (20, 4), (8, 6), (6, 6), (20, 8), (8, 10), (6, 10),
-                 (20, 12), (8, 14), (6, 14)]
+    temp_obstacles = [(18, 0), (16, 0), (14, 0), (18, 4), (16, 4), (24, 20), (14, 4), (22, 20), (21, 4), (19, 4),
+                      (17, 4),
+                      (11, 8), (18, 8), (16, 8), (14, 8), (19, 8), (15, 8), (18, 12), (16, 12), (21, 12), (12, 0),
+                      (15, 12),
+                      (10, 0), (18, 16), (8, 0), (20, 16), (11, 16), (16, 16), (12, 4), (10, 4), (37, 18), (8, 4),
+                      (7, 8),
+                      (12, 8), (10, 8), (9, 12), (7, 12), (14, 12), (12, 12), (10, 12), (9, 16), (7, 16), (14, 16),
+                      (4, 0),
+                      (12, 16), (2, 0), (10, 16), (20, 2), (1, 4), (6, 4), (4, 4), (20, 6), (8, 8), (6, 8), (20, 10),
+                      (8, 12), (6, 12), (8, 16), (6, 16), (30, 0), (18, 2), (26, 18), (16, 2), (24, 18), (14, 2),
+                      (22, 18),
+                      (2, 4), (27, 18), (11, 6), (18, 6), (16, 6), (14, 6), (21, 6), (19, 6), (17, 6), (11, 10),
+                      (15, 6),
+                      (18, 10), (16, 10), (21, 10), (19, 10), (17, 10), (15, 10), (20, 14), (11, 14), (18, 14),
+                      (16, 14),
+                      (2, 16), (28, 0), (26, 0), (24, 0), (18, 18), (21, 18), (32, 0), (17, 18), (12, 6), (10, 6),
+                      (9, 10),
+                      (13, 6), (7, 10), (14, 10), (12, 10), (10, 10), (7, 14), (14, 14), (12, 14), (10, 14), (22, 0),
+                      (20, 0), (14, 18), (12, 18), (10, 18), (19, 18), (20, 4), (8, 6), (6, 6), (20, 8), (8, 10),
+                      (6, 10),
+                      (20, 12), (8, 14), (6, 14)]
     obstacles = [[0 for j in range(maze_size[1])] for i in range(maze_size[0])]
     for obstacle in temp_obstacles:
         x, y = obstacle

@@ -95,26 +95,41 @@ class FinderController:
             self.view.printMap(mapSize=self.settings['mapSize'], worker=self.settings["worker"],
                                shelves=self.settings["shelves"], path=None, rotation=self.settings['rotation'])
 
-            destination_list = self.view.inputDestination(settings=self.settings)
-            optimal_path = self.model.get_optimal_path(self.settings, destination_list)
+            while True:
+                method1 = input("Choose your input method\n1: input manually \n2: input order list from file \n")
+                if method1 not in ['1', '2']:
+                    print('wrong input')
+                    continue
+                elif method1 == '1':
+                    order_list = [self.view.inputDestination(settings=self.settings)]
+                    break
+                elif method1 == '2':
+                    order_list = self.view.inputOrders(settings=self.settings)
+                    break
 
-            # Print the map with the optimal path highlighted.
-            self.view.printMap(mapSize=self.settings['mapSize'], worker=self.settings["worker"],
-                               shelves=self.settings["shelves"], path=optimal_path, highlight=destination_list,
-                               rotation=self.settings['rotation'])
+            for destination_list in order_list:
+                optimal_path = self.model.get_optimal_path(self.settings, destination_list)
 
-            # Print the directions for the optimal path.
-            self.view.printDirection(path=optimal_path, rotation=self.settings['rotation'],
-                                     mapSize=self.settings['mapSize'])
+                # Print the map with the optimal path highlighted.
+                self.view.printMap(mapSize=self.settings['mapSize'], worker=self.settings["worker"],
+                                   shelves=self.settings["shelves"], path=optimal_path, highlight=destination_list,
+                                   rotation=self.settings['rotation'])
 
-            # Ask the user if they want to get another product.
-            option = input(
-                "Choose one option: \n1) go get other products! \n2) export results to a file \n3) back to main menu\n")
-            if option == "1":
-                continue
-            elif option == "2":
-                self.view.exportResult(self.settings, optimal_path, destination_list)
-            break
+                # Print the directions for the optimal path.
+                self.view.printDirection(path=optimal_path, rotation=self.settings['rotation'],
+                                         mapSize=self.settings['mapSize'])
+                print("Algorithm: ", self.settings['algorithm'])
+
+                # Ask the user if they want to get another product.
+                option = input(
+                    "Choose one option: \n1) go get next order! \n2) export results to a file \n3) back to main menu\n")
+                if option == "1":
+                    continue
+                elif option == "2":
+                    self.view.exportResult(self.settings, optimal_path, destination_list)
+                    continue
+                else:
+                    return
 
     def setting(self):
         # This method is called when the user wants to change the settings.

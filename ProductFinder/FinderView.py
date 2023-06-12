@@ -230,6 +230,28 @@ class FinderView:
             i+=1
         return destination_list
 
+    def inputOrders(self, settings):
+        order_list = []
+        while True:
+            filename = input("Please input file path:")
+            try:
+                f = open(filename, "r")
+                for line in f.readlines():
+                    product_list = []
+                    for productID in line.strip().split(', '):
+                        try:
+                            destination_row = settings['products'][productID][0]
+                            destination_col = settings['products'][productID][1]
+                            product_list.append((destination_row, destination_col))
+                        except:
+                            print('product ID {} not found'.format(productID))
+                            continue
+
+                    order_list.append(product_list)
+                return order_list
+            except FileNotFoundError:
+                print(f"Error: File '{filename}' not found.")
+
     def inputWorker(self, mapSize: (int, int), rotation: int):
         try:
             worker_input = input("please input worker location(eg. 1 2): ").split()
@@ -258,7 +280,7 @@ class FinderView:
 
     def inputAlgorithm(self):
         try:
-            algorithm = input("please choose an algorithm(1 or 2 or 3): \n1) tspDp \n2) Branch & Bound\n3) Nearest Neighbor")
+            algorithm = input("1) tspDp \n2) Branch & Bound\n3) Nearest Neighbor\nplease choose an algorithm(1 or 2 or 3):")
             assert algorithm in ['1', '2','3']
             if algorithm == '1':
                 return 'tspDp'
@@ -349,20 +371,6 @@ class FinderView:
         # Reset the standard output to the original stream
         sys.stdout = sys.__stdout__
         print(f'Output file: {file_name}')
-
-    def readOrder(self):
-        filename = input("Please input file path:")
-        try:
-            f = open(filename, "r")
-            orders = []
-            for line in f.readlines():
-                order = line.strip().split(', ')
-                order = [int(product) for product in order]
-                orders.append(order)
-            return orders
-        except FileNotFoundError:
-            print(f"Error: File '{filename}' not found.")
-            return None
 
 
 

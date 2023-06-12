@@ -17,7 +17,7 @@ def main():
         "shelves": [(2, 3), (3, 2), (3, 4), (4, 3)],
         "products": {},
         "orders": [],
-        'countDown': 15 # seconds for timeout
+        'countDown': 60 # seconds for timeout
     }
     finderModel = FinderModel()
     finderView = FinderView()
