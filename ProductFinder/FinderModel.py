@@ -1,4 +1,5 @@
 import heapq
+import math
 from itertools import permutations
 import multiprocessing
 import copy
@@ -352,10 +353,66 @@ class FinderModel:
             current_row = best_col_index
         return optimal_path
 
+
+    def MST(self,obstacle_matrix, start_point,midway_points):
+        ## upper bounds
+        random_access_points=self.generate_valid_access_points(obstacle_matrix,midway_points)
+        curr_pos=start_point
+        upper_bound=0
+        for point in random_access_points:
+            next_pos=point
+            this_path=self.findPath(curr_pos,next_pos,obstacle_matrix)
+            this_len=len(this_path)
+            upper_bound+=this_len
+            curr_pos=point
+        print("upper bound: ",upper_bound)
+        ##MST
+        visited=[]
+        edges=[]##edge: (product, access_point,length)
+        total_cost = 0
+        access_points={}
+        for point in midway_points:
+            access_points[point] = self.generate_valid_access_points(obstacle_matrix, [point], number='all')
+            for access_point in access_points[point]:
+                edge=self.findPath(start_point,access_point,obstacle_matrix)
+                edge_len=len(edge)-1
+                edges.append((point,access_point,edge_len))
+        while(len(visited)<len(midway_points)):
+            ## choose the shortest edge
+            shortest=edges[0]
+            for edge in edges:
+                if shortest[2]>edge[2]:
+                    shortest=edge
+            this_product=shortest[0]
+            ## add this to visited:
+            total_cost+=shortest[2]
+            visited.append(shortest[0])
+            ## update edges:
+            ## remove the added product
+            edges_to_be_removed=[]
+            for edge in edges:
+                if edge[0]==this_product:
+                    edges_to_be_removed.append(edge)
+            for removing_item in edges_to_be_removed:
+                edges.remove(removing_item)
+            ## update all the remaining edges
+            for index,edge in enumerate(edges):
+                new_edge=self.findPath(this_product,edge[1],obstacle_matrix)
+                new_edge_length=len(new_edge)-1
+                if new_edge_length<edge[2]:
+                    edges[index]=(edge[0],edge[1],new_edge_length)
+        print("MST total cost:", total_cost)
+
+
+
+
+
     def NN(self,obstacle_matrix, start_point,midway_points):
+        self.MST(obstacle_matrix,start_point,midway_points)
         # print(midway_points)
         # access_points=self.generate_valid_access_points(obstacle_matrix,midway_points)
         curr_pos=start_point
+        path=[]
         path=[]
         access_points={}
         for point in midway_points:
@@ -375,22 +432,11 @@ class FinderModel:
             path = path[0:len(path) - 1]
             curr_pos = next_pos
         path += self.findPath(curr_pos, start_point, obstacle_matrix)
-
-
-
-
-        # while access_points:
-        #     all_paths=[self.findPath(curr_pos,dest,obstacle_matrix) for dest in access_points]
-        #     all_lenths=[len(path) for path in all_paths]
-        #     shortest=min(all_lenths)
-        #     index=all_lenths.index(shortest)
-        #     next_pos=access_points[index]
-        #     path+=self.findPath(curr_pos,next_pos,obstacle_matrix)
-        #     path=path[0:len(path)-1]
-        #     access_points.remove(next_pos)
-        #     curr_pos=next_pos
-        # path+=self.findPath(curr_pos,start_point,obstacle_matrix)
+        total_cost=len(path)-1
+        print("total cost of nearest neighbor: ",total_cost)
         return path
+
+
     def get_optimal_path_process(self, queue, settings, destination_list):
         obstacle_matrix = self.CreateObstacles(
             mapSize=settings['mapSize'],
